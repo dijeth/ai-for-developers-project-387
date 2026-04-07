@@ -92,6 +92,10 @@ model UpdateTimeOffRequest {
  * Calendar owner profile (static, single owner)
  */
 model Owner {
+  @minLength(1)
+  @maxLength(100)
+  name: string;
+
   @format("email")
   email: string;
 
@@ -114,6 +118,10 @@ model Owner {
  * Public owner profile (without sensitive data)
  */
 model PublicOwner {
+  @minLength(1)
+  @maxLength(100)
+  name: string;
+
   description?: string;
 
   @format("uri")
@@ -269,6 +277,10 @@ model AvailableSlotsResponse {
  * Update working hours request
  */
 model UpdateOwnerRequest {
+  @minLength(1)
+  @maxLength(100)
+  name?: string;
+
   @format("email")
   email?: string;
 

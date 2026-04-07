@@ -24,6 +24,7 @@ export interface Booking {
 }
 
 export interface PublicOwner {
+  name: string;
   description?: string;
   workingHours: {
     startTime: string;

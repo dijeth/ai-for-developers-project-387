@@ -40,7 +40,7 @@ const guestForm = reactive<Guest>({
   email: ''
 });
 
-const ownerName = computed(() => owner.value?.description?.split(' ')[0] || 'Tota');
+const ownerName = computed(() => owner.value?.name || '');
 
 // Load data on mount
 onMounted(() => {

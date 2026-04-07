@@ -634,9 +634,14 @@ components:
     Owner:
       type: object
       required:
+        - name
         - email
         - workingHours
       properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
         email:
           type: string
           format: email
@@ -661,8 +666,13 @@ components:
     PublicOwner:
       type: object
       required:
+        - name
         - workingHours
       properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
         description:
           type: string
         avatar:
@@ -713,6 +723,10 @@ components:
     UpdateOwnerRequest:
       type: object
       properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
         email:
           type: string
           format: email
