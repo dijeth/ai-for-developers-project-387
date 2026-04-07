@@ -642,6 +642,19 @@ components:
           format: email
         description:
           type: string
+        avatar:
+          type: string
+          format: uri
+          examples:
+            - https://i.pravatar.cc/150?img=1
+        bookingMonthsAhead:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+          description: Number of months ahead that booking is possible
+          examples:
+            - 3
         workingHours:
           $ref: '#/components/schemas/WorkingHours'
       description: Calendar owner profile (static, single owner)
@@ -652,6 +665,19 @@ components:
       properties:
         description:
           type: string
+        avatar:
+          type: string
+          format: uri
+          examples:
+            - https://i.pravatar.cc/150?img=1
+        bookingMonthsAhead:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+          description: Number of months ahead that booking is possible
+          examples:
+            - 3
         workingHours:
           type: object
           properties:
@@ -692,6 +718,17 @@ components:
           format: email
         description:
           type: string
+        avatar:
+          type: string
+          format: uri
+          examples:
+            - https://i.pravatar.cc/150?img=1
+        bookingMonthsAhead:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+          description: Number of months ahead that booking is possible
         workingHours:
           $ref: '#/components/schemas/WorkingHours'
       description: Update working hours request

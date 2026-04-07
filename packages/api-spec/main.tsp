@@ -97,6 +97,16 @@ model Owner {
 
   description?: string;
 
+  @format("uri")
+  @example("https://i.pravatar.cc/150?img=1")
+  avatar?: string;
+
+  /** Number of months ahead that booking is possible */
+  @minValue(1)
+  @maxValue(12)
+  @example(3)
+  bookingMonthsAhead?: int32;
+
   workingHours: WorkingHours;
 }
 
@@ -105,6 +115,16 @@ model Owner {
  */
 model PublicOwner {
   description?: string;
+
+  @format("uri")
+  @example("https://i.pravatar.cc/150?img=1")
+  avatar?: string;
+
+  /** Number of months ahead that booking is possible */
+  @minValue(1)
+  @maxValue(12)
+  @example(3)
+  bookingMonthsAhead?: int32;
 
   /** Working hours for display (excludes time-offs details) */
   workingHours: {
@@ -253,6 +273,15 @@ model UpdateOwnerRequest {
   email?: string;
 
   description?: string;
+
+  @format("uri")
+  @example("https://i.pravatar.cc/150?img=1")
+  avatar?: string;
+
+  /** Number of months ahead that booking is possible */
+  @minValue(1)
+  @maxValue(12)
+  bookingMonthsAhead?: int32;
 
   workingHours?: WorkingHours;
 }
