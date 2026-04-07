@@ -48,6 +48,7 @@ Order matters due to dependencies:
 ## Package Details
 
 ### packages/api-spec
+
 - **Entry**: `main.tsp`
 - **Config**: `tspconfig.yaml` (outputs to `../contracts`)
 - **Key commands**:
@@ -55,6 +56,7 @@ Order matters due to dependencies:
   - `npm run watch` - watch mode (also `npm run dev`)
 
 ### packages/contracts
+
 - **Generated**: `openapi.yaml` (OpenAPI 3.1.0)
 - **Mock server**: Prism serves mock responses from the spec
 - **Key commands**:
@@ -62,6 +64,7 @@ Order matters due to dependencies:
   - `npm run dev` - alias for mock
 
 ### apps/web
+
 - **Entry**: `src/main.ts`
 - **Framework**: Vue 3 (Composition API, `<script setup>`)
 - **UI**: PrimeVue with Lara Light Blue theme
@@ -71,6 +74,7 @@ Order matters due to dependencies:
   - `npm run build` - `vue-tsc && vite build`
 
 ### apps/api
+
 - **Entry**: `src/main.ts`
 - **Framework**: NestJS (empty scaffold, not connected to frontend)
 - **Note**: Currently runs independently on port 3001. Frontend talks to Prism mock (4010), not this.
@@ -119,3 +123,12 @@ vim apps/web/src/App.vue
 1. **API changes**: Edit `packages/api-spec/main.tsp` → recompiles automatically → mocks update
 2. **Frontend changes**: Edit `apps/web/src/**/*.vue` → hot reload
 3. **Backend implementation**: Edit `apps/api/src/` → runs on :3001 (not yet integrated)
+
+# Recomendations
+
+1. Fix the root cause of the problem, not the symptoms.
+2. If you see fixes you did not make - ignore them.
+
+## When working in the web
+
+1. Try to dont use `!important` in the css, use css variables instead
