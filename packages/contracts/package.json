@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "mock": "prism mock openapi.yaml -p 4010",
-    "dev": "prism mock openapi.yaml -p 4010"
+    "dev": "prism proxy openapi.yaml http://localhost:3001 --errors -p 4010"
   },
   "devDependencies": {
     "@stoplight/prism-cli": "^5.14.2"
