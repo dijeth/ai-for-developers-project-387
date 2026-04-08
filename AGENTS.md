@@ -2,34 +2,32 @@
 
 ## Project Overview
 
-Monorepo for a Calendar Booking system (Cal.com-inspired). Uses **TypeSpec** for API-first design with code generation.
-
-**Architecture**: API specification → OpenAPI → Mock server → Frontend consuming mocks.
+Calendar booking monorepo using **TypeSpec** for API-first design. Architecture: TypeSpec → OpenAPI → Prism (proxy/validation layer) → NestJS backend → Vue frontend.
 
 ## Repository Structure
 
 ```
 apps/
-  api/           # NestJS backend (port 3001) - empty scaffold
-  web/           # Vue 3 + PrimeVue frontend (port 3000)
+  api/           # NestJS + Prisma backend (port 3001) - scaffold only, not used by frontend
+  web/           # Vue 3 + PrimeVue frontend (port 3000) → proxies /api to :4010
 packages/
-  api-spec/      # TypeSpec API definition (source of truth)
-  contracts/     # Generated OpenAPI 3.1.0 spec + Prism mock server
+  api-spec/      # TypeSpec source files (main.tsp)
+  contracts/     # Generated openapi.yaml + Prism proxy on port 4010 (forwards to :3001)
 ```
 
 ## Essential Commands
 
 ```bash
-# Install dependencies (root only, workspaces handled automatically)
+# Install (workspaces handled automatically)
 npm install
 
-# Start all dev servers (turbo runs these in parallel)
+# Start all dev servers (turbo parallel)
 npm run dev
-# - API spec watch mode (recompiles .tsp → openapi.yaml)
-# - Prism mock server starts on port 4010
-# - Vite dev server on port 3000 (proxies /api → :4010)
+# - api-spec watch mode: recompiles .tsp → openapi.yaml
+# - Prism proxy on port 4010 (forwards to NestJS on :3001)
+# - Vite dev server on port 3000
 
-# Build everything for production
+# Build for production (tsp:compile → build pipeline)
 npm run build
 
 # Type-check all packages
@@ -38,97 +36,67 @@ npm run typecheck
 
 ## Build Pipeline (Turbo)
 
-Order matters due to dependencies:
-
+Order matters:
 1. `tsp:compile` (packages/api-spec) → generates `packages/contracts/openapi.yaml`
-2. `build` depends on `^tsp:compile` (upstream task completion)
+2. `build` depends on `^tsp:compile` (upstream completion)
 
-**Never modify `packages/contracts/openapi.yaml` manually** — it's generated from TypeSpec.
+**Never modify `packages/contracts/openapi.yaml` manually** — generated from TypeSpec.
 
 ## Package Details
 
 ### packages/api-spec
-
 - **Entry**: `main.tsp`
-- **Config**: `tspconfig.yaml` (outputs to `../contracts`)
-- **Key commands**:
-  - `npm run build` - one-time compile
-  - `npm run watch` - watch mode (also `npm run dev`)
+- **Output**: `../contracts/openapi.yaml` (configured in `tspconfig.yaml`)
+- **Commands**: `npm run build` (once), `npm run watch` / `npm run dev` (watch mode)
 
 ### packages/contracts
-
 - **Generated**: `openapi.yaml` (OpenAPI 3.1.0)
-- **Mock server**: Prism serves mock responses from the spec
-- **Key commands**:
-  - `npm run mock` - start Prism on port 4010
-  - `npm run dev` - alias for mock
+- **Commands**:
+  - `npm run mock` - Prism mock server on port 4010
+  - `npm run dev` - Prism **proxy** mode (forwards to localhost:3001) with error simulation
 
 ### apps/web
-
-- **Entry**: `src/main.ts`
 - **Framework**: Vue 3 (Composition API, `<script setup>`)
-- **UI**: PrimeVue with Lara Light Blue theme
-- **Config**: `vite.config.ts` proxies `/api` → `http://localhost:4010`
-- **Key commands**:
-  - `npm run dev` - Vite dev server with HMR
+- **UI**: PrimeVue with Lara Light Blue theme (copied to `public/themes/` via `postinstall`)
+- **Proxy**: `/api` → `http://localhost:4010` (vite.config.ts)
+- **Commands**:
+  - `npm run dev` - Vite dev server with HMR on port 3000
   - `npm run build` - `vue-tsc && vite build`
+  - `npm run copy-themes` - copies PrimeVue themes to public/
 
 ### apps/api
-
-- **Entry**: `src/main.ts`
-- **Framework**: NestJS (empty scaffold, not connected to frontend)
-- **Note**: Currently runs independently on port 3001. Frontend talks to Prism mock (4010), not this.
-
-## Development Workflow
-
-```bash
-# Terminal 1: Start all dev infrastructure
-npm run dev
-
-# Terminal 2: Work on API spec
-vim packages/api-spec/main.tsp
-# Changes auto-recompile openapi.yaml, Prism auto-reloads
-
-# Terminal 3: Work on frontend
-vim apps/web/src/App.vue
-# Hot reload via Vite
-```
-
-## API Design Notes
-
-- **TypeSpec is the source of truth** — all models, routes, validation defined in `main.tsp`
-- Uses `@typespec/http`, `@typespec/rest`, `@typespec/openapi3`
-- Key patterns: `@route`, `@tag`, `@error`, `@pattern`, `@minLength`, etc.
-- Current API surface: Admin endpoints (`/api/admin/*`) + Public endpoints (`/api/*`)
-- Error codes defined in `ErrorResponse` model: NOT_FOUND, VALIDATION_ERROR, CONFLICT, SLOT_UNAVAILABLE, etc.
+- **Framework**: NestJS with Prisma ORM
+- **Commands**:
+  - `npm run dev` - NestJS watch mode on port 3001
+  - `npm run db:generate` - Prisma client generation
+  - `npm run db:migrate` - Run migrations
+  - `npm run db:push` - Push schema changes
+  - `npm run db:studio` - Prisma Studio GUI
+  - `npm run db:seed` - Run seed script
 
 ## Constraints & Gotchas
 
-1. **No linting configured** — no ESLint, Prettier, or similar tools found
-2. **API is mock-only** — real NestJS backend exists but frontend doesn't use it
-3. **TypeScript strictness varies**:
-   - `apps/api`: `strictNullChecks: false`, `noImplicitAny: false`
-   - `apps/web`: `strict: true`, `noUnusedLocals: true`
+1. **No linting configured** — turbo has `lint` task but packages don't implement it
+2. **Prism runs in proxy mode** — frontend → Vite proxy (3000) → Prism (4010) → NestJS backend (3001). Prism validates requests/responses against OpenAPI spec and simulates errors.
+3. **TypeScript strictness**:
+   - `apps/api`: `strict: true`, target ES2021
+   - `apps/web`: `strict: true`, `noUnusedLocals: true`, target ES2020
 4. **npm@10.0.0** — pinned package manager version
-5. **Node targets**: ES2021 (API), ES2020 (Web)
+5. **Theme files** — PrimeVue themes copied on `npm install` via `postinstall` hook; if themes missing, run `npm run copy-themes`
 
 ## CI / Testing
 
-- **Hexlet workflow**: `.github/workflows/hexlet-check.yml` — runs on every push
-- **Do not modify** the hexlet-check.yml file (marked as auto-generated)
-- Tests appear to be external (run by Hexlet platform)
+- **Hexlet workflow**: `.github/workflows/hexlet-check.yml` — auto-generated, runs on every push
+- **Do not modify** hexlet-check.yml (marked as auto-generated)
+- Tests run externally by Hexlet platform
 
 ## When Adding Features
 
-1. **API changes**: Edit `packages/api-spec/main.tsp` → recompiles automatically → mocks update
-2. **Frontend changes**: Edit `apps/web/src/**/*.vue` → hot reload
-3. **Backend implementation**: Edit `apps/api/src/` → runs on :3001 (not yet integrated)
+1. **API changes**: Edit `packages/api-spec/main.tsp` → auto-recompiles → mocks update
+2. **Frontend changes**: Edit `apps/web/src/**/*.vue` → hot reload via Vite
+3. **Backend changes**: Edit `apps/api/src/` → NestJS on port 3001 (frontend accesses via Prism proxy on :4010)
 
-# Recomendations
+## Style Notes
 
-1. Fix the root cause of the problem, not the symptoms.
-2. If you see fixes you did not make - ignore them.
-
-## When working in the web
-
-1. Try to dont use `!important` in the css, use css variables instead
+- Comments: Write only in English
+- CSS: Avoid `!important`, use CSS variables instead
