@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
+interface CreateBookingData {
+  eventTypeId: string;
+  startTime: Date;
+  endTime: Date;
+  guestName: string;
+  guestEmail: string;
+}
+
 @Injectable()
 export class BookingService {
   constructor(private prisma: PrismaService) {}
@@ -8,6 +16,35 @@ export class BookingService {
   async findAll() {
     return this.prisma.booking.findMany({
       orderBy: { startTime: 'asc' },
+      include: {
+        eventType: true,
+      },
+    });
+  }
+
+  async findInRange(start: Date, end: Date) {
+    return this.prisma.booking.findMany({
+      where: {
+        // Booking overlaps with range if:
+        // booking.start < range.end AND booking.end > range.start
+        AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
+      },
+      include: {
+        eventType: true,
+      },
+      orderBy: { startTime: 'asc' },
+    });
+  }
+
+  async create(data: CreateBookingData) {
+    return this.prisma.booking.create({
+      data: {
+        eventTypeId: data.eventTypeId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        guestName: data.guestName,
+        guestEmail: data.guestEmail,
+      },
       include: {
         eventType: true,
       },
