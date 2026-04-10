@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { EventType, AvailableSlot } from '../../types/booking';
 import EventTypeSummary from './EventTypeSummary.vue';
-import CalendarPanel from './CalendarPanel.vue';
+import BaseCalendar from '../common/BaseCalendar.vue';
 import TimeSlotsPanel from './TimeSlotsPanel.vue';
 
 interface Props {
@@ -11,15 +12,23 @@ interface Props {
   availableSlots: AvailableSlot[];
   isLoadingSlots: boolean;
   maxDate: Date | null;
+  workingDays?: string[];
+  markedDates?: Set<string>;
+  markerType?: 'primary' | 'success';
 }
 
-defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  workingDays: () => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+  markedDates: () => new Set<string>(),
+  markerType: 'primary'
+});
 
 const emit = defineEmits<{
   'update:selectedDate': [date: Date];
   'update:selectedSlot': [slot: AvailableSlot | null];
   back: [];
   continue: [];
+  'month-change': [date: Date];
 }>();
 
 const handleDateChange = (date: Date) => {
@@ -38,6 +47,20 @@ const handleBack = () => {
 const handleContinue = () => {
   emit('continue');
 };
+
+const handleMonthChange = (date: Date) => {
+  emit('month-change', date);
+};
+
+// Computed wrapper for calendar v-model
+const calendarDate = computed({
+  get: () => props.selectedDate,
+  set: (value) => {
+    if (value) {
+      handleDateChange(value);
+    }
+  }
+});
 </script>
 
 <template>
@@ -54,11 +77,21 @@ const handleContinue = () => {
       </div>
       
       <div class="column middle-column">
-        <CalendarPanel
-          :model-value="selectedDate"
-          :max-date="maxDate"
-          @update:model-value="handleDateChange"
-        />
+        <div class="calendar-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">Календарь</h3>
+          </div>
+          <BaseCalendar
+            v-model="calendarDate"
+            :max-date="maxDate"
+            :working-days="workingDays"
+            :marked-dates="markedDates"
+            :marker-type="markerType"
+            :show-legend="true"
+            :legend-label="markerType === 'success' ? 'Есть свободные слоты' : 'Есть бронирования'"
+            @month-change="handleMonthChange"
+          />
+        </div>
       </div>
       
       <div class="column right-column">
@@ -112,6 +145,27 @@ const handleContinue = () => {
 .right-column {
   position: sticky;
   top: 2rem;
+}
+
+.calendar-panel {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--surface-900);
 }
 
 @media (max-width: 1024px) {

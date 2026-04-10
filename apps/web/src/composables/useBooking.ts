@@ -150,6 +150,7 @@ export function useCreateBooking() {
 // Re-export for backward compatibility
 export { toUTCDateString, toUTCEndOfDayString } from '../utils/date.utils';
 export { formatLongDate as formatDate } from '../utils/date.utils';
+export { addMonths, startOfLocalMonth, endOfLocalMonth } from '../utils/date.utils';
 
 /**
  * Formats an available slot as time range for display.

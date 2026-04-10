@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import Button from 'primevue/button';
+import Menu from 'primevue/menu';
 import type { Booking } from '../types/admin';
 import { 
   useAdminBookings, 
@@ -13,7 +14,7 @@ import {
 } from '../composables/useAdminDashboard';
 import BookingStatsCards from '../components/admin/BookingStatsCards.vue';
 import BookingTable from '../components/admin/BookingTable.vue';
-import AdminCalendar from '../components/admin/AdminCalendar.vue';
+import BaseCalendar from '../components/common/BaseCalendar.vue';
 import ConfirmDialog from '../components/admin/ConfirmDialog.vue';
 
 // Reactive state
@@ -50,6 +51,56 @@ const { calculateStats } = useBookingStats();
 
 // Stats calculated from current month bookings - doesn't change with calendar month selection
 const stats = computed(() => calculateStats(statsBookings.value));
+
+// Menu for calendar actions
+const menuRef = ref<InstanceType<typeof Menu> | null>(null);
+const menuItems = ref([
+  {
+    label: 'Добавить time-off',
+    icon: 'pi pi-plus-circle',
+    command: () => {
+      console.log('[MOCK] Add time-off for', formatDateLocal(selectedDate.value));
+    }
+  },
+  {
+    label: 'Изменить рабочие часы',
+    icon: 'pi pi-clock',
+    command: () => {
+      console.log('[MOCK] Edit working hours');
+    }
+  }
+]);
+
+const toggleMenu = (event: Event) => {
+  menuRef.value?.toggle(event);
+};
+
+// Get set of dates that have bookings (only future/present, not past)
+const datesWithBookings = computed(() => {
+  const dates = new Set<string>();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  monthBookings.value.forEach(booking => {
+    const date = new Date(booking.startTime);
+    // Only show dots for today or future dates
+    const bookingDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    if (bookingDateOnly >= today) {
+      // Use local date components to match calendar display
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const key = `${year}-${month}-${day}`;
+      dates.add(key);
+    }
+  });
+  return dates;
+});
+
+// Working days from owner settings
+const workingDays = computed(() => {
+  return owner.value?.workingHours?.workingDays || ['mon', 'tue', 'wed', 'thu', 'fri'];
+});
 
 const tableTitle = computed(() => {
   const today = new Date();
@@ -205,13 +256,31 @@ const confirmCancelBooking = async () => {
 
         <!-- Calendar Section -->
         <div class="calendar-section">
-          <AdminCalendar
-            v-model="selectedDate"
-            :bookings="monthBookings"
-            :owner="owner"
-            :max-date="maxBookingDate"
-            @month-change="handleMonthChange"
-          />
+          <div class="admin-calendar-container">
+            <div class="calendar-header">
+              <h2 class="calendar-title">Календарь бронирований</h2>
+              <div class="calendar-actions">
+                <Button 
+                  label="Изменить" 
+                  icon="pi pi-pencil" 
+                  severity="secondary" 
+                  text 
+                  size="small"
+                  @click="toggleMenu"
+                />
+                <Menu ref="menuRef" :model="menuItems" popup />
+              </div>
+            </div>
+            
+            <BaseCalendar
+              v-model="selectedDate"
+              :max-date="maxBookingDate"
+              :working-days="workingDays"
+              :marked-dates="datesWithBookings"
+              :show-legend="true"
+              @month-change="handleMonthChange"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -290,6 +359,32 @@ const confirmCancelBooking = async () => {
 
 .calendar-section {
   min-width: 0;
+}
+
+.admin-calendar-container {
+  background: var(--surface-card);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendar-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--surface-900);
+}
+
+.calendar-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 @media (max-width: 1024px) {
