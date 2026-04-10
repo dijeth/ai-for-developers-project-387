@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { fromISO, utcNow } from '@calendar/date-utils';
 
 // Enable plugins
 dayjs.extend(utc);
@@ -66,19 +67,7 @@ export function toUTCEndOfDayString(date: Date): string {
     .toISOString();
 }
 
-/**
- * Parses an ISO string to Date (UTC).
- */
-export function fromISO(isoString: string): Date {
-  return new Date(isoString);
-}
-
-/**
- * Gets current UTC time.
- */
-export function utcNow(): Date {
-  return new Date();
-}
+export { fromISO, utcNow };
 
 /**
  * Formats a date for local display (uses browser timezone).
@@ -138,70 +127,56 @@ export function formatTimeRange(startISO: string, endISO: string, locale = 'ru-R
  * Adds months to a date.
  */
 export function addMonths(date: Date, months: number): Date {
-  const result = new Date(date);
-  result.setMonth(result.getMonth() + months);
-  return result;
+  return dayjs(date).add(months, 'month').toDate();
 }
 
 /**
  * Checks if two dates are the same local day.
  */
 export function isSameLocalDay(date1: Date, date2: Date): boolean {
-  return date1.getFullYear() === date2.getFullYear() &&
-         date1.getMonth() === date2.getMonth() &&
-         date1.getDate() === date2.getDate();
+  return dayjs(date1).isSame(dayjs(date2), 'day');
 }
 
 /**
  * Gets the start of local week (Sunday).
  */
 export function startOfLocalWeek(date: Date): Date {
-  const result = new Date(date);
-  const day = result.getDay();
-  result.setDate(result.getDate() - day);
-  result.setHours(0, 0, 0, 0);
-  return result;
+  return dayjs(date).startOf('week').toDate();
 }
 
 /**
  * Gets the end of local week (Saturday).
  */
 export function endOfLocalWeek(date: Date): Date {
-  const start = startOfLocalWeek(date);
-  const result = new Date(start);
-  result.setDate(result.getDate() + 6);
-  result.setHours(23, 59, 59, 999);
-  return result;
+  return dayjs(date).endOf('week').toDate();
 }
 
 /**
  * Gets the start of local month.
  */
 export function startOfLocalMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+  return dayjs(date).startOf('month').toDate();
 }
 
 /**
  * Gets the end of local month.
  */
 export function endOfLocalMonth(date: Date): Date {
-  const result = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  result.setHours(23, 59, 59, 999);
-  return result;
+  return dayjs(date).endOf('month').toDate();
 }
 
 /**
  * Gets the start of local day.
  */
 export function startOfLocalDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return dayjs(date).startOf('day').toDate();
 }
 
 /**
  * Gets day of week (0-6) for local timezone.
  */
 export function getLocalDayOfWeek(date: Date): number {
-  return date.getDay();
+  return dayjs(date).day();
 }
 
 // ============================================================================

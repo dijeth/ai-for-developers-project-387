@@ -7,22 +7,17 @@ import { AvailableSlotDto } from '../../dto/slot/available-slot.dto';
 import { DayOfWeek } from '../../common/enums/day-of-week.enum';
 import { TimeInterval, generateSlotsFromGaps } from '../../common/utils/slot.utils';
 import {
-  utcNow,
-  fromISO,
   addUTCDays,
   addUTCMonths,
-  isUTCBefore,
+  convertLocalTimeToUTC,
+  fromISO,
+  getDayOfWeekInTimezone,
   isUTCAfter,
+  isUTCBefore,
   isSameUTCDay,
   startOfUTCDay,
-  getDayOfWeekInTimezone,
-} from '../../common/utils/date.utils';
-import * as dayjs from 'dayjs';
-import * as utc from 'dayjs/plugin/utc';
-import * as timezone from 'dayjs/plugin/timezone';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+  utcNow,
+} from '@calendar/date-utils';
 
 @Injectable()
 export class AvailableSlotsService {
@@ -129,8 +124,6 @@ export class AvailableSlotsService {
     now: Date,
   ): AvailableSlotDto[] {
     const allSlots: AvailableSlotDto[] = [];
-    const [startHours, startMinutes] = owner.workingHoursStart.split(':').map(Number);
-    const [endHours, endMinutes] = owner.workingHoursEnd.split(':').map(Number);
 
     // Iterate through each day in the range
     let currentDate = startOfUTCDay(startDate);
@@ -142,18 +135,8 @@ export class AvailableSlotsService {
       const dayOfWeek = this.numberToDayOfWeek(dayOfWeekNum);
       if (owner.workingDays.includes(dayOfWeek)) {
         // Calculate working hours for this day in owner's timezone, converted to UTC
-        const dayWorkingStart = this.convertLocalTimeToUTC(
-          currentDate,
-          startHours,
-          startMinutes,
-          owner.timezone,
-        );
-        const dayWorkingEnd = this.convertLocalTimeToUTC(
-          currentDate,
-          endHours,
-          endMinutes,
-          owner.timezone,
-        );
+        const dayWorkingStart = convertLocalTimeToUTC(currentDate, owner.workingHoursStart, owner.timezone);
+        const dayWorkingEnd = convertLocalTimeToUTC(currentDate, owner.workingHoursEnd, owner.timezone);
 
         // Clamp working hours to the requested range
         const effectiveStart = isUTCAfter(dayWorkingStart, startDate)
@@ -190,22 +173,6 @@ export class AvailableSlotsService {
 
     return allSlots;
   }
-
-  private convertLocalTimeToUTC(date: Date, hours: number, minutes: number, timeZone: string): Date {
-    // Create a dayjs object in the owner's timezone for this specific date and time
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-
-    const localDateTime = dayjs.tz(
-      `${year}-${month}-${day} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
-      timeZone,
-    );
-
-    // Convert to UTC and return as Date
-    return localDateTime.utc().toDate();
-  }
-
   private numberToDayOfWeek(dayNum: number): DayOfWeek {
     const days: DayOfWeek[] = [
       DayOfWeek.SUN,

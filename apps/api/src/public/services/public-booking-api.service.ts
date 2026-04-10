@@ -10,7 +10,7 @@ import { OwnerService } from '../../prisma/models/owner.service';
 import { CreateBookingDto } from '../../dto/booking/create-booking.dto';
 import { BookingDto } from '../../dto/booking/booking.dto';
 import { AvailableSlotsService } from './available-slots.service';
-import { fromISO, utcNow, startOfUTCDay, isUTCBefore, addUTCDays } from '../../common/utils/date.utils';
+import { addUTCDays, fromISO, isUTCBefore, startOfUTCDay, utcNow } from '@calendar/date-utils';
 
 @Injectable()
 export class PublicBookingApiService {

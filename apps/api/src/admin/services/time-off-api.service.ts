@@ -12,7 +12,7 @@ import {
   UpdateTimeOffDto,
 } from '../../dto/owner/time-off-request.dto';
 import { TimeOffDto } from '../../dto/owner/time-off.dto';
-import { fromISO, utcNow, isUTCBefore, isUTCAfter } from '../../common/utils/date.utils';
+import { fromISO, isUTCAfter, isUTCBefore, utcNow } from '@calendar/date-utils';
 
 @Injectable()
 export class TimeOffApiService {

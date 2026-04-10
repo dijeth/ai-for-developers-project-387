@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
 import type { Booking, Owner, WorkingHoursTimeOff, BookingStats, DateRangeFilter } from '../types/admin';
+import { fromISO } from '@calendar/date-utils';
 import {
-  fromISO,
   isSameLocalDay,
   startOfLocalWeek,
   endOfLocalWeek,

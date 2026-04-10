@@ -103,53 +103,81 @@ Order matters:
 
 ## Date/Time Handling (UTC-Only Policy)
 
-**IMPORTANT: Backend only works with UTC dates. Frontend handles local↔UTC conversion.**
+**IMPORTANT: Shared UTC logic lives in `packages/date-utils`. Backend only works with UTC dates. Frontend handles local↔UTC conversion and local display.**
+
+### Shared UTC Core (`packages/date-utils`)
+
+**File**: `packages/date-utils/src/index.ts`
+
+```typescript
+// Shared UTC/timezone helpers used by both backend and frontend:
+utcNow();
+fromISO(string);
+toISO(date);
+startOfUTCDay(date);
+endOfUTCDay(date);
+startOfUTCWeek(date);
+addUTCDays(date, n);
+addUTCMonths(date, n);
+formatUTCDate(date);
+formatUTCTime(date);
+isUTCBefore(a, b);
+isUTCAfter(a, b);
+isSameUTCDay(a, b);
+convertLocalTimeToUTC(date, time, timezone);
+getDayOfWeekInTimezone(date, timezone);
+```
+
+**Rules:**
+
+1. Put reusable UTC-only and timezone-aware date logic in `packages/date-utils`
+2. Use `dayjs`-based helpers from the shared package instead of reimplementing UTC math in `api` or `web`
+3. Keep browser-local formatting and UI-specific conversions out of the shared package
 
 ### Backend (apps/api)
 
 **File**: `src/common/utils/date.utils.ts`
 
 ```typescript
-// Use these instead of native Date methods:
-utcNow()              // Instead of new Date()
-fromISO(string)        // Parse ISO string
-startOfUTCDay(date)    // 00:00:00 UTC
-endOfUTCDay(date)      // 23:59:59 UTC
-addUTCDays(date, n)    // Add days
-addUTCMonths(date, n)  // Add months
-formatUTCDate(date)    // YYYY-MM-DD
-formatUTCTime(date)    // HH:MM
+// Backend date utils file re-exports shared UTC helpers:
+export { utcNow, fromISO, startOfUTCDay, ... } from '@calendar/date-utils';
 ```
 
 **Rules:**
-1. Never use `new Date()` directly — always `utcNow()`
-2. Never use `.getHours()`, `.getDate()` — always `.getUTCHours()`, `.getUTCDate()`
-3. Never use `.setHours()`, `.setDate()` — always `.setUTCHours()`, `.setUTCDate()`
-4. All API responses use `.toISOString()` (guarantees UTC)
+
+1. Backend services should import shared UTC helpers from `@calendar/date-utils` or from the local re-export file when appropriate
+2. Never implement local-time business logic in backend date calculations unless timezone handling is explicit
+3. All persisted and API-level datetimes remain UTC and are returned via `.toISOString()`
+4. Use timezone-aware helpers like `convertLocalTimeToUTC()` and `getDayOfWeekInTimezone()` for owner timezone logic
 
 ### Frontend (apps/web)
 
 **File**: `src/utils/date.utils.ts`
 
 ```typescript
+// Keep frontend-specific helpers here.
+
 // For API calls (convert local→UTC):
-toUTCDateString(date)        // YYYY-MM-DDT00:00:00.000Z
-toUTCEndOfDayString(date)    // YYYY-MM-DDT23:59:59.999Z
+toUTCDateString(date); // YYYY-MM-DDT00:00:00.000Z
+toUTCEndOfDayString(date); // YYYY-MM-DDT23:59:59.999Z
 
 // For display (uses browser timezone):
-formatLocalDate(date)         // "пт, 9 апр"
-formatLocalTime(isoString)   // "14:30"
-formatTimeRange(start, end)  // "14:30 - 15:30"
+formatLocalDate(date); // "пт, 9 апр"
+formatLocalTime(isoString); // "14:30"
+formatTimeRange(start, end); // "14:30 - 15:30"
 
-// For parsing:
-fromISO(isoString)            // Parse API date
+// For parsing/current UTC time (re-exported from shared package):
+fromISO(isoString); // Parse API date
+utcNow(); // Current UTC time
 ```
 
 **Rules:**
+
 1. Calendar shows local dates (PrimeVue Calendar uses browser TZ)
 2. API calls convert to UTC using `toUTCDateString()`
 3. Display functions use `toLocaleString()` for local formatting
-4. Never send bare `Date` objects to API — always convert to ISO string
+4. Reuse shared UTC helpers from `@calendar/date-utils` instead of duplicating parsing/comparison logic in frontend
+5. Never send bare `Date` objects to API — always convert to ISO string
 
 ### Flow
 
@@ -160,7 +188,7 @@ toUTCDateString() converts to UTC
         ↓
 API call with UTC ISO string
         ↓
-Backend processes in UTC, returns ISO strings
+Backend processes in UTC via shared helpers, returns ISO strings
         ↓
 formatLocalTime() converts to local for display
 ```
