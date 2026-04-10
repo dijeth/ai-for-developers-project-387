@@ -13,6 +13,7 @@ import { WorkingHoursApiService } from '../services/working-hours-api.service';
 import { CreateWorkingHoursDto } from '../../dto/working-hours/create-working-hours.dto';
 import { UpdateWorkingHoursDto } from '../../dto/working-hours/update-working-hours.dto';
 import { WorkingHoursDto } from '../../dto/working-hours/working-hours.dto';
+import { WorkingHoursListResponseDto } from '../../dto/working-hours/working-hours-list-response.dto';
 import { DayOfWeek } from '../../common/enums/day-of-week.enum';
 
 @Controller('api/admin/owner/working-hours')
@@ -22,8 +23,9 @@ export class AdminWorkingHoursController {
   constructor(private workingHoursApiService: WorkingHoursApiService) {}
 
   @Get()
-  async listWorkingHours(): Promise<WorkingHoursDto[]> {
-    return this.workingHoursApiService.listWorkingHours(this.ownerId);
+  async listWorkingHours(): Promise<WorkingHoursListResponseDto> {
+    const workingHours = await this.workingHoursApiService.listWorkingHours(this.ownerId);
+    return { workingHours };
   }
 
   @Post()

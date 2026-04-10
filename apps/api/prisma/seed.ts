@@ -124,62 +124,96 @@ async function main() {
     et_deep_dive: 120,
   };
 
+  // Helper: find next weekday (1=Mon ... 5=Fri) at or after a given date
+  const nextWeekday = (from: Date, weekday: number): Date => {
+    const d = new Date(from);
+    const day = d.getUTCDay() === 0 ? 7 : d.getUTCDay(); // 1=Mon, 7=Sun
+    const diff = ((weekday - day) + 7) % 7;
+    d.setUTCDate(d.getUTCDate() + diff);
+    return d;
+  };
+
+  // Helper: date at specific UTC hour (returns new Date)
+  const atHour = (date: Date, hour: number, minute = 0): Date => {
+    const d = new Date(date);
+    d.setUTCHours(hour, minute, 0, 0);
+    return d;
+  };
+
+  // Anchor mondays of upcoming weeks (working days only, 09:00–17:00 UTC)
+  const mon1 = nextWeekday(tomorrow, 1);          // next Monday
+  const tue1 = nextWeekday(tomorrow, 2);          // next Tuesday
+  const wed1 = nextWeekday(tomorrow, 3);          // next Wednesday
+  const thu1 = nextWeekday(tomorrow, 4);          // next Thursday
+  const fri1 = nextWeekday(tomorrow, 5);          // next Friday
+
+  const mon2 = new Date(mon1); mon2.setUTCDate(mon2.getUTCDate() + 7);  // Monday +1 week
+  const tue2 = new Date(tue1); tue2.setUTCDate(tue2.getUTCDate() + 7);  // Tuesday +1 week
+  const wed2 = new Date(wed1); wed2.setUTCDate(wed2.getUTCDate() + 7);  // Wednesday +1 week
+
   const bookingsData = [
-    // Бронирование на завтра - Code Review
+    // This week Monday - Code Review 10:00
     {
       eventTypeId: 'et_code_review',
       guestName: 'Alex Chen',
       guestEmail: 'alex.chen@techcompany.com',
-      startTime: new Date(tomorrow.getTime() + 10 * 60 * 60 * 1000), // 10:00 UTC
+      startTime: atHour(mon1, 10),
     },
-    // Бронирование на завтра - Architecture Discussion
+    // This week Monday - Architecture Discussion 14:00
     {
       eventTypeId: 'et_architecture',
       guestName: 'Maria Garcia',
       guestEmail: 'maria.garcia@startup.io',
-      startTime: new Date(tomorrow.getTime() + 13 * 60 * 60 * 1000), // 13:00 UTC
+      startTime: atHour(mon1, 14),
     },
-    // Бронирование на послезавтра - Quick Consult
+    // This week Tuesday - Quick Consult 09:30
     {
       eventTypeId: 'et_quick_consult',
       guestName: 'James Wilson',
       guestEmail: 'james.w@freelancer.net',
-      startTime: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000 + 9.5 * 60 * 60 * 1000), // 9:30 UTC
+      startTime: atHour(tue1, 9, 30),
     },
-    // Бронирование на следующую неделю - Deep Dive
+    // This week Wednesday - Deep Dive 09:00
     {
       eventTypeId: 'et_deep_dive',
       guestName: 'Emma Thompson',
       guestEmail: 'emma.t@enterprise.com',
-      startTime: new Date(tomorrow.getTime() + 7 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000), // 14:00 UTC
+      startTime: atHour(wed1, 9),
     },
-    // Бронирование на следующую неделю - Code Review
+    // This week Thursday - Code Review 11:00
     {
       eventTypeId: 'et_code_review',
       guestName: 'David Kim',
       guestEmail: 'david.kim@devteam.org',
-      startTime: new Date(tomorrow.getTime() + 8 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000), // 11:00 UTC
+      startTime: atHour(thu1, 11),
     },
-    // Бронирование на следующую неделю - Architecture
+    // This week Friday - Architecture 15:00
     {
       eventTypeId: 'et_architecture',
       guestName: 'Sophie Martin',
       guestEmail: 'sophie.martin@design.co',
-      startTime: new Date(tomorrow.getTime() + 9 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000), // 15:00 UTC
+      startTime: atHour(fri1, 15),
     },
-    // Бронирование через 2 недели (перед отпуском) - Quick Consult
+    // Next week Monday (before time-off) - Quick Consult 16:30
     {
       eventTypeId: 'et_quick_consult',
       guestName: 'Robert Brown',
       guestEmail: 'robert.brown@consulting.com',
-      startTime: new Date(tomorrow.getTime() + 13 * 24 * 60 * 60 * 1000 + 16 * 60 * 60 * 1000), // 16:00 UTC
+      startTime: atHour(mon2, 16, 30),
     },
-    // Бронирование через 3 недели (после отпуска) - Code Review
+    // Next week Tuesday - Code Review 10:00
     {
       eventTypeId: 'et_code_review',
       guestName: 'Lisa Anderson',
       guestEmail: 'lisa.anderson@product.io',
-      startTime: new Date(tomorrow.getTime() + 22 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000), // 10:00 UTC
+      startTime: atHour(tue2, 10),
+    },
+    // Next week Wednesday - Architecture 13:00
+    {
+      eventTypeId: 'et_architecture',
+      guestName: 'Noah Patel',
+      guestEmail: 'noah.patel@labs.io',
+      startTime: atHour(wed2, 13),
     },
   ];
 
@@ -195,7 +229,7 @@ async function main() {
     });
   }
 
-  console.log(`✅ Created ${bookingsData.length} Bookings\n`);
+  console.log(`✅ Created ${bookingsData.length} Bookings (all within working hours mon-fri 09:00-17:00 UTC)\n`);
 
   // ============================================================================
   // Summary

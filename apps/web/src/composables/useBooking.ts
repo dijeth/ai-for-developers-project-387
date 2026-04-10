@@ -122,7 +122,8 @@ export function useWorkingHours() {
       if (!response.ok) {
         throw new Error('Failed to fetch working hours');
       }
-      workingHours.value = await response.json();
+      const data = await response.json();
+      workingHours.value = data.workingHours;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error';
     } finally {
