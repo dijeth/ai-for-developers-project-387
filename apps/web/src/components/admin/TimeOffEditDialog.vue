@@ -2,10 +2,10 @@
 import { computed, ref, watch } from "vue";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
-import Calendar from "primevue/calendar";
 import InputMask from "primevue/inputmask";
 import Message from "primevue/message";
 import type { WorkingHoursTimeOff } from "../../types/admin";
+import BaseCalendar from "../common/BaseCalendar.vue";
 
 interface TimeOffPayload {
   startDateTime: string;
@@ -16,6 +16,9 @@ interface Props {
   visible: boolean;
   timeOff?: WorkingHoursTimeOff | null;
   isLoading?: boolean;
+  workingDays?: string[];
+  markedDates?: Set<string>;
+  maxDate?: Date | null;
 }
 
 const props = defineProps<Props>();
@@ -25,7 +28,7 @@ const emit = defineEmits<{
   save: [payload: TimeOffPayload];
 }>();
 
-const selectedDate = ref<Date | null>(null);
+const selectedDate = ref(new Date());
 const startTime = ref("");
 const endTime = ref("");
 const validationError = ref<string | null>(null);
@@ -63,7 +66,7 @@ const convertLocalDateAndTimeToUtcIso = (date: Date, time: string): string => {
 };
 
 const resetForm = () => {
-  selectedDate.value = null;
+  selectedDate.value = new Date();
   startTime.value = "";
   endTime.value = "";
   validationError.value = null;
@@ -106,11 +109,6 @@ const handleCancel = () => {
 
 const handleSave = () => {
   validationError.value = null;
-
-  if (!selectedDate.value) {
-    validationError.value = "Выберите день";
-    return;
-  }
 
   if (!startTime.value || !endTime.value) {
     validationError.value = "Укажите время начала и окончания";
@@ -158,14 +156,13 @@ const handleSave = () => {
 
       <div class="field-group">
         <label class="field-label" for="time-off-date">День</label>
-        <Calendar
-          id="time-off-date"
+        <BaseCalendar
           v-model="selectedDate"
-          dateFormat="dd.mm.yy"
-          :manualInput="false"
-          :showIcon="true"
-          :disabled="isLoading"
-          placeholder="Выберите день"
+          :working-days="workingDays"
+          :marked-dates="markedDates"
+          :max-date="maxDate"
+          :show-legend="true"
+          legend-label="Есть бронирования"
         />
       </div>
 
@@ -225,6 +222,10 @@ const handleSave = () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.field-group :deep(.base-calendar-container) {
+  margin-top: 0.25rem;
 }
 
 .field-label {
