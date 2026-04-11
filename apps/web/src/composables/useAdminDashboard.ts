@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import type { Booking, Owner, WorkingHours, WorkingHoursTimeOff, BookingStats, DateRangeFilter } from '../types/admin';
+import type { Booking, Owner, WorkingHours, WorkingHoursTimeOff, EventType, BookingStats, DateRangeFilter } from '../types/admin';
 import { fromISO } from '@calendar/date-utils';
 import {
   isSameLocalDay,
@@ -261,6 +261,140 @@ export function useAdminTimeOffs() {
     createTimeOff,
     updateTimeOff,
     deleteTimeOff
+  };
+}
+
+export function useAdminEventTypes() {
+  const eventTypes = ref<EventType[]>([]);
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
+
+  const getApiErrorMessage = async (
+    response: Response,
+    fallback: string
+  ): Promise<string> => {
+    try {
+      const data = await response.json();
+      if (typeof data?.message === 'string') {
+        return data.message;
+      }
+      if (Array.isArray(data?.message)) {
+        return data.message.join(', ');
+      }
+      return fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const fetchEventTypes = async () => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await fetch(`${ADMIN_API_BASE_URL}/event-types`);
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response, 'Failed to fetch event types'));
+      }
+      const data = await response.json();
+      eventTypes.value = Array.isArray(data) ? data : data.eventTypes;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error';
+      throw e;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const createEventType = async (payload: {
+    title: string;
+    durationMinutes: number;
+  }) => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await fetch(`${ADMIN_API_BASE_URL}/event-types`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response, 'Failed to create event type'));
+      }
+
+      const data = await response.json();
+      eventTypes.value = [...eventTypes.value, data];
+      return data;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error';
+      throw e;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const updateEventType = async (
+    id: string,
+    payload: {
+      title?: string;
+      durationMinutes?: number;
+    }
+  ) => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await fetch(`${ADMIN_API_BASE_URL}/event-types/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response, 'Failed to update event type'));
+      }
+
+      const data = await response.json();
+      eventTypes.value = eventTypes.value.map((item) =>
+        item.id === id ? data : item
+      );
+      return data;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error';
+      throw e;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteEventType = async (id: string) => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await fetch(`${ADMIN_API_BASE_URL}/event-types/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response, 'Failed to delete event type'));
+      }
+
+      eventTypes.value = eventTypes.value.filter((item) => item.id !== id);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error';
+      throw e;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  return {
+    eventTypes,
+    isLoading,
+    error,
+    fetchEventTypes,
+    createEventType,
+    updateEventType,
+    deleteEventType
   };
 }
 

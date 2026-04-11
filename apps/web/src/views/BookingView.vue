@@ -206,7 +206,23 @@ const handleCancelGuestForm = () => {
 </script>
 
 <template>
-  <div class="booking-view">
+  <div
+    class="booking-view"
+    :class="{ 'booking-view-slot-picker': state.step === 'slot-picker' }"
+  >
+    <!-- Навигационная кнопка для возврата к выбору типа слота -->
+    <template v-if="state.step === 'slot-picker'">
+      <div class="nav-back-wrap">
+        <Button
+          label="К выбору события"
+          icon="pi pi-arrow-left"
+          size="small"
+          class="nav-back-button p-button-outlined"
+          @click="handleBackToEventTypes"
+        />
+      </div>
+    </template>
+
     <!-- Step 1: Event Type Selection -->
     <EventTypeSelection
       v-if="state.step === 'event-type'"
@@ -292,6 +308,19 @@ const handleCancelGuestForm = () => {
 </template>
 
 <style scoped>
+.nav-back-wrap {
+  max-width: 1200px;
+  margin: 0 auto 1rem;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.nav-back-wrap :deep(.nav-back-button.p-button.p-component.p-button-outlined) {
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
 .booking-view {
   min-height: calc(100vh - 73px);
   background: linear-gradient(
@@ -299,6 +328,11 @@ const handleCancelGuestForm = () => {
     var(--surface-50) 0%,
     var(--surface-100) 100%
   );
+}
+
+.booking-view-slot-picker {
+  background: var(--surface-ground);
+  padding-top: 2.125rem;
 }
 
 .loading-container {

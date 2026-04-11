@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { AvailableSlot } from '../../types/booking';
-import Button from 'primevue/button';
-import { formatSlotTime } from '../../composables/useBooking';
+import type { AvailableSlot } from "../../types/booking";
+import Button from "primevue/button";
+import { formatSlotTime } from "../../composables/useBooking";
 
 interface Props {
   slots: AvailableSlot[];
@@ -18,30 +18,30 @@ const emit = defineEmits<{
 }>();
 
 const handleSlotClick = (slot: AvailableSlot) => {
-  emit('select', slot);
+  emit("select", slot);
 };
 
 const handleBack = () => {
-  emit('back');
+  emit("back");
 };
 
 const handleContinue = () => {
-  emit('continue');
+  emit("continue");
 };
 </script>
 
 <template>
   <div class="time-slots-panel">
     <h3 class="panel-title">Статус слотов</h3>
-    
+
     <div v-if="isLoading" class="loading-state">
       <span class="loading-text">Загрузка слотов...</span>
     </div>
-    
+
     <div v-else-if="slots.length === 0" class="empty-state">
       <span class="empty-text">Нет доступных слотов</span>
     </div>
-    
+
     <div v-else class="slots-list">
       <div
         v-for="slot in slots"
@@ -54,18 +54,18 @@ const handleContinue = () => {
         <span class="slot-status free">Свободно</span>
       </div>
     </div>
-    
+
     <div class="action-buttons">
-      <Button
-        label="Назад"
-        class="p-button-outlined back-btn"
-        @click="handleBack"
-      />
       <Button
         label="Продолжить"
         class="continue-btn"
         :disabled="!selectedSlot"
         @click="handleContinue"
+      />
+      <Button
+        label="Изменить тип события"
+        class="p-button-outlined back-btn"
+        @click="handleBack"
       />
     </div>
   </div>
@@ -164,12 +164,13 @@ const handleContinue = () => {
 
 .action-buttons {
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   margin-top: auto;
 }
 
 .back-btn {
-  flex: 1;
+  width: 100%;
 }
 
 .back-btn :deep(.p-button) {
@@ -181,7 +182,7 @@ const handleContinue = () => {
 }
 
 .continue-btn {
-  flex: 1;
+  width: 100%;
 }
 
 .continue-btn :deep(.p-button) {
