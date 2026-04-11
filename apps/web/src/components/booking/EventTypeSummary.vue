@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { EventType, AvailableSlot } from '../../types/booking';
-import { formatDate, formatSlotTime } from '../../composables/useBooking';
+import { computed } from "vue";
+import type { EventType, AvailableSlot } from "../../types/booking";
+import { formatDate, formatSlotTime } from "../../composables/useBooking";
 
 interface Props {
   eventType: EventType;
@@ -14,7 +14,9 @@ interface Props {
 const props = defineProps<Props>();
 
 const avatarUrl = computed(() => {
-  return props.ownerAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tota';
+  return (
+    props.ownerAvatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Tota"
+  );
 });
 </script>
 
@@ -30,23 +32,27 @@ const avatarUrl = computed(() => {
           <span class="role">Host</span>
         </div>
       </div>
-      
+
       <h2 class="title">{{ eventType.title }}</h2>
       <span class="duration-badge">{{ eventType.durationMinutes }} мин</span>
-      
+
       <p class="description">
-        {{ eventType.description || 'Короткий тип события для быстрого слота.' }}
+        {{ eventType.description }}
       </p>
     </div>
-    
+
     <div class="info-blocks">
       <div class="info-block">
         <span class="label">Выбранная дата</span>
-        <span class="value">{{ selectedDate ? formatDate(selectedDate) : 'Дата не выбрана' }}</span>
+        <span class="value">{{
+          selectedDate ? formatDate(selectedDate) : "Дата не выбрана"
+        }}</span>
       </div>
       <div class="info-block">
         <span class="label">Выбранное время</span>
-        <span class="value">{{ selectedSlot ? formatSlotTime(selectedSlot) : 'Время не выбрано' }}</span>
+        <span class="value">{{
+          selectedSlot ? formatSlotTime(selectedSlot) : "Время не выбрано"
+        }}</span>
       </div>
     </div>
   </div>

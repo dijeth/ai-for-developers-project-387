@@ -308,6 +308,7 @@ export function useAdminEventTypes() {
   const createEventType = async (payload: {
     title: string;
     durationMinutes: number;
+    description?: string;
   }) => {
     isLoading.value = true;
     error.value = null;
@@ -323,8 +324,9 @@ export function useAdminEventTypes() {
       }
 
       const data = await response.json();
-      eventTypes.value = [...eventTypes.value, data];
-      return data;
+      const created = data?.eventType ?? data;
+      eventTypes.value = [...eventTypes.value, created];
+      return created;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error';
       throw e;
@@ -338,6 +340,7 @@ export function useAdminEventTypes() {
     payload: {
       title?: string;
       durationMinutes?: number;
+      description?: string;
     }
   ) => {
     isLoading.value = true;
@@ -354,10 +357,11 @@ export function useAdminEventTypes() {
       }
 
       const data = await response.json();
+      const updated = data?.eventType ?? data;
       eventTypes.value = eventTypes.value.map((item) =>
-        item.id === id ? data : item
+        item.id === id ? updated : item
       );
-      return data;
+      return updated;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error';
       throw e;

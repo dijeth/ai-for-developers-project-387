@@ -32,6 +32,7 @@ export interface EventType {
   id: string;
   title: string;
   durationMinutes: number;
+  description?: string;
 }
 
 export interface Guest {
@@ -72,11 +73,7 @@ export interface DateRangeFilter {
 }
 
 
-export interface EventType {
-  id: string;
-  title: string;
-  durationMinutes: number;
-}
+// ...удалены дублирующиеся интерфейсы EventType, Guest, Booking, BookingListResponse, TimeOffListResponse, BookingStats, DateRangeFilter...
 
 export interface Guest {
   name: string;

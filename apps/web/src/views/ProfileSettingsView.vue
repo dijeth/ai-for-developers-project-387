@@ -263,6 +263,7 @@ const openEditEventTypeDialog = (eventType: EventType) => {
 const handleEventTypeSave = async (payload: {
   title: string;
   durationMinutes: number;
+  description?: string;
 }) => {
   isSavingEventType.value = true;
   try {

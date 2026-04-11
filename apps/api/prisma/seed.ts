@@ -57,21 +57,25 @@ async function main() {
         id: 'et_quick_consult',
         title: 'Quick Consultation',
         durationMinutes: 15,
+        description: 'Короткая консультация по любому вопросу (15 минут).',
       },
       {
         id: 'et_code_review',
         title: 'Code Review Session',
         durationMinutes: 30,
+        description: 'Совместный разбор кода и рекомендации по улучшению.',
       },
       {
         id: 'et_architecture',
         title: 'Architecture Discussion',
         durationMinutes: 60,
+        description: '', // пустое описание для проверки опциональности
       },
       {
         id: 'et_deep_dive',
         title: 'Deep Dive / Workshop',
         durationMinutes: 120,
+        // description не задано, будет undefined
       },
     ],
   });

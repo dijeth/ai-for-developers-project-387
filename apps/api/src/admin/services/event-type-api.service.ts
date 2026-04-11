@@ -62,11 +62,13 @@ export class EventTypeApiService {
     id: string;
     title: string;
     durationMinutes: number;
+    description?: string | null;
   }): EventTypeDto {
     return {
       id: eventType.id,
       title: eventType.title,
       durationMinutes: eventType.durationMinutes,
+      description: eventType.description ?? undefined,
     };
   }
 }

@@ -725,6 +725,9 @@ components:
           format: int32
           minimum: 15
           maximum: 480
+        description:
+          type: string
+          maxLength: 300
       description: Create event type request
     CreateTimeOffRequest:
       type: object
@@ -810,6 +813,9 @@ components:
           format: int32
           minimum: 15
           maximum: 480
+        description:
+          type: string
+          maxLength: 300
       description: Event type = duration choice (30min, 60min, etc.)
     EventTypeListResponse:
       type: object
@@ -931,6 +937,9 @@ components:
           format: int32
           minimum: 15
           maximum: 480
+        description:
+          type: string
+          maxLength: 300
       description: Update event type request
     UpdateOwnerRequest:
       type: object

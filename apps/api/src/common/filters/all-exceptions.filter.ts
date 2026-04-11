@@ -88,7 +88,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return response;
     }
     if (typeof response === 'object' && response !== null) {
-      return (response as { message?: string }).message || 'An error occurred';
+      const message = (response as { message?: string | string[] }).message;
+      if (Array.isArray(message)) {
+        return message.join(', ');
+      }
+      if (typeof message === 'string') {
+        return message;
+      }
+      return 'An error occurred';
     }
     return 'An error occurred';
   }

@@ -87,6 +87,7 @@ model EventType {
   id              String    @id @default(cuid())
   title           String
   durationMinutes Int       // 15-480 minutes
+  description     String?
 
   // Relation to Booking
   bookings        Booking[]

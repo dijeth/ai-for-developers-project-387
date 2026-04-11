@@ -23,16 +23,19 @@ export class EventTypeService {
       data: {
         title: data.title,
         durationMinutes: data.durationMinutes,
+        description: data.description,
       },
     });
   }
 
   async update(id: string, data: UpdateEventTypeDto) {
-    const updateData: Record<string, string | number> = {};
+    const updateData: Record<string, string | number | null | undefined> = {};
 
     if (data.title !== undefined) updateData.title = data.title;
     if (data.durationMinutes !== undefined)
       updateData.durationMinutes = data.durationMinutes;
+    if (data.description !== undefined)
+      updateData.description = data.description;
 
     return this.prisma.eventType.update({
       where: { id },

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EventType } from '../../types/booking';
+import type { EventType } from "../../types/booking";
 
 interface Props {
   eventType: EventType;
@@ -11,7 +11,7 @@ const emit = defineEmits<{
 }>();
 
 const handleClick = () => {
-  emit('select', props.eventType);
+  emit("select", props.eventType);
 };
 
 function getDurationText(minutes: number): string {
@@ -23,9 +23,11 @@ function getDurationText(minutes: number): string {
   <div class="event-type-card" @click="handleClick">
     <div class="card-header">
       <h3 class="title">{{ eventType.title }}</h3>
-      <span class="duration-badge">{{ getDurationText(eventType.durationMinutes) }}</span>
+      <span class="duration-badge">{{
+        getDurationText(eventType.durationMinutes)
+      }}</span>
     </div>
-    <p class="description">{{ eventType.description || 'Базовый тип события для бронирования.' }}</p>
+    <p class="description">{{ eventType.description }}</p>
   </div>
 </template>
 

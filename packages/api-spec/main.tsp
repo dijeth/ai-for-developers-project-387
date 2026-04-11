@@ -154,6 +154,9 @@ model EventType {
   @minValue(15)
   @maxValue(480)
   durationMinutes: int32;
+
+  @maxLength(300)
+  description?: string;
 }
 
 /**
@@ -209,6 +212,9 @@ model CreateEventTypeRequest {
   @minValue(15)
   @maxValue(480)
   durationMinutes: int32;
+
+  @maxLength(300)
+  description?: string;
 }
 
 /**
@@ -222,6 +228,9 @@ model UpdateEventTypeRequest {
   @minValue(15)
   @maxValue(480)
   durationMinutes?: int32;
+
+  @maxLength(300)
+  description?: string;
 }
 
 /**
