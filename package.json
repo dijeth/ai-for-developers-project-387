@@ -12,9 +12,9 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "docker:build": "docker build -t calendar-booking .",
-    "docker:up": "docker-compose up --build",
-    "docker:down": "docker-compose down",
-    "docker:clean": "docker-compose down -v"
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:clean": "docker compose down -v"
   },
   "devDependencies": {
     "turbo": "^2.0.0"

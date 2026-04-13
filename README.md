@@ -5,11 +5,14 @@ colorFrom: blue
 colorTo: indigo
 sdk: docker
 app_port: 7860
+pinned: false
+license: mit
 ---
 
 # Calendar Booking MVP
 
 ### Hexlet tests and linter status:
+
 [![Actions Status](https://github.com/dijeth/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/dijeth/ai-for-developers-project-386/actions)
 
 A calendar booking application built with NestJS, Vue 3, and TypeSpec.
