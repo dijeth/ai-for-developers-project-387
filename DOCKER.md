@@ -12,6 +12,12 @@ npm run docker:clean       # Stop and remove volumes
 railway login              # Login to CLI
 railway link               # Link project
 railway up                 # Deploy
+
+# Hugging Face Spaces deployment
+# Auto-deploys on push to main via GitHub Actions
+# Or manual deploy with HF CLI:
+huggingface-cli login      # Login to Hugging Face
+huggingface-cli repo create my-space --type space --sdk docker
 ```
 
 ## Local Development
@@ -225,6 +231,65 @@ docker-compose up --build
 - No authentication in MVP (as per requirements)
 - Health endpoint is public (`GET /api/owner`)
 
+## Hugging Face Spaces Deployment
+
+### Setup (One-time)
+
+1. **Create Hugging Face Account**: https://huggingface.co/join
+
+2. **Create Space**:
+   - Go to https://huggingface.co/spaces
+   - Click "Create new Space"
+   - Name: `calendar-booking` (or your choice)
+   - SDK: **Docker**
+   - Hardware: **Free** (or upgrade as needed)
+   - Visibility: **Public** or **Private**
+
+3. **Configure GitHub Secrets** (for auto-deploy):
+   - Go to your GitHub repo → Settings → Secrets and variables → Actions
+   - Add `HF_TOKEN`: Your Hugging Face access token (get from https://huggingface.co/settings/tokens)
+   - Add `HF_SPACE_NAME`: Your space name (e.g., `username/calendar-booking`)
+
+4. **Enable Persistent Storage** (important!):
+   - Go to Space Settings → "Enable persistent storage"
+   - This ensures SQLite database persists across restarts
+
+### Deployment
+
+**Option 1: GitHub Actions (Auto-deploy)** ⭐ Recommended
+- Push to `main` branch → automatic deployment to Hugging Face Spaces
+- Configured in `.github/workflows/huggingface-deploy.yml`
+
+**Option 2: Manual CLI**
+```bash
+# Install Hugging Face CLI
+pip install huggingface-hub
+
+# Login
+huggingface-cli login
+
+# Add remote and push
+git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME
+git push hf main
+```
+
+### Architecture Differences (vs Railway)
+
+| Feature | Railway | Hugging Face Spaces |
+|---------|---------|---------------------|
+| Default Port | 80 | 7860 |
+| Persistent Storage | `/app/api/data` | `/data` (symlinked) |
+| Health Check | `/api/owner` on :80 | Built-in on :7860 |
+| Auto-deploy | Railway CLI / GitHub | GitHub Actions |
+| Config File | `railway.toml` | `README.md` metadata |
+
+### URLs
+
+- **Railway**: `https://your-app.up.railway.app`
+- **Hugging Face**: `https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME`
+
 ## CI/CD (GitHub Actions)
 
-Docker build is tested on every PR via `.github/workflows/docker.yml`.
+- **Hexlet Check**: `.github/workflows/hexlet-check.yml` (auto-generated, runs on every push)
+- **Docker Build Test**: `.github/workflows/docker.yml` (tests Docker build on PRs)
+- **Hugging Face Deploy**: `.github/workflows/huggingface-deploy.yml` (deploys to HF Spaces on push to main)

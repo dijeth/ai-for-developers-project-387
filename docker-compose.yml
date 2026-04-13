@@ -7,17 +7,17 @@ services:
       dockerfile: Dockerfile
       target: production
     ports:
-      - "3000:80"
+      - "7860:7860"
     volumes:
-      # Persist SQLite database
-      - sqlite_data:/app/api/data
+      # Persist SQLite database in /data (Hugging Face Spaces compatible)
+      - sqlite_data:/data
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=file:./data/prod.db
+      - DATABASE_URL=file:/data/prod.db
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/api/admin/event-types"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7860/api/owner"]
       interval: 30s
       timeout: 10s
       retries: 3

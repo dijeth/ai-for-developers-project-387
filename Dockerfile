@@ -12,6 +12,9 @@ COPY packages/api-spec/package*.json ./packages/api-spec/
 COPY packages/contracts/package*.json ./packages/contracts/
 COPY packages/date-utils/package*.json ./packages/date-utils/
 
+# Copy Prisma schema (required for postinstall hook)
+COPY apps/api/prisma ./apps/api/prisma
+
 # Install dependencies
 RUN npm ci
 
@@ -21,13 +24,12 @@ FROM node:20-alpine AS spec-builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package*.json ./
-
-# Copy source files
 COPY packages/api-spec ./packages/api-spec
-COPY turbo.json ./
+COPY packages/contracts ./packages/contracts
 
 # Generate OpenAPI from TypeSpec
-RUN npx turbo run tsp:compile
+WORKDIR /app/packages/api-spec
+RUN npx tsp compile .
 
 # Stage 3: Build all applications
 FROM node:20-alpine AS builder
@@ -70,11 +72,11 @@ RUN apk add --no-cache nodejs npm
 
 WORKDIR /app
 
-# Copy backend files (selective copy for smaller image)
-COPY --from=builder /app/apps/api/dist ./api/dist
-COPY --from=builder /app/apps/api/prisma ./api/prisma
-COPY --from=builder /app/apps/api/package*.json ./api/
-COPY --from=builder /app/node_modules ./api/node_modules
+# Copy the entire app structure (to preserve workspace symlinks)
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/apps/api/package*.json ./apps/api/
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 
 # Copy frontend build to nginx html
@@ -84,7 +86,9 @@ COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 COPY --from=builder /app/apps/web/public/themes /usr/share/nginx/html/themes
 
 # Create data directory for SQLite with proper permissions
-RUN mkdir -p /app/api/data && chmod 777 /app/api/data
+# Hugging Face Spaces uses /data for persistent storage
+RUN mkdir -p /data && chmod 777 /data
+RUN ln -sf /data /app/apps/api/data
 
 # Copy nginx configuration
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
@@ -96,10 +100,10 @@ RUN chmod +x /app/start.sh
 # Environment variables
 ENV NODE_ENV=production
 ENV PORT=3001
-ENV DATABASE_URL="file:./data/prod.db"
+ENV DATABASE_URL="file:/data/prod.db"
 
-# Expose ports
-EXPOSE 80
+# Expose ports (7860 is Hugging Face Spaces standard port)
+EXPOSE 7860
 
 # Start both backend and nginx
 CMD ["/app/start.sh"]

@@ -34,10 +34,9 @@ Thumbs.db
 .git
 .gitignore
 
-# Docker
-Dockerfile*
+# Docker - allow docker/ config files but ignore compose and dockerfiles
 docker-compose*
-docker/
+Dockerfile*
 .dockerignore
 
 # Tests
