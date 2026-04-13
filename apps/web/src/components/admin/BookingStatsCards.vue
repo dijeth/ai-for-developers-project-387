@@ -19,36 +19,38 @@ const formatDuration = (minutes: number): string => {
 
 <template>
   <div class="stats-grid">
-    <Card class="stat-card">
-      <template #content>
-        <div class="stat-content">
-          <div class="stat-icon today">
-            <i class="pi pi-calendar"></i>
+    <div class="stats-left">
+      <Card class="stat-card">
+        <template #content>
+          <div class="stat-content">
+            <div class="stat-icon today">
+              <i class="pi pi-calendar"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ stats.today }}</span>
+              <span class="stat-label">Сегодня</span>
+              <span v-if="stats.totalDurationToday > 0" class="stat-sublabel mobile-hide">
+                {{ formatDuration(stats.totalDurationToday) }}
+              </span>
+            </div>
           </div>
-          <div class="stat-info">
-            <span class="stat-value">{{ stats.today }}</span>
-            <span class="stat-label">Сегодня</span>
-            <span v-if="stats.totalDurationToday > 0" class="stat-sublabel mobile-hide">
-              {{ formatDuration(stats.totalDurationToday) }}
-            </span>
-          </div>
-        </div>
-      </template>
-    </Card>
+        </template>
+      </Card>
 
-    <Card class="stat-card">
-      <template #content>
-        <div class="stat-content">
-          <div class="stat-icon week">
-            <i class="pi pi-calendar-week"></i>
+      <Card class="stat-card">
+        <template #content>
+          <div class="stat-content">
+            <div class="stat-icon week">
+              <i class="pi pi-th-large"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ stats.thisWeek }}</span>
+              <span class="stat-label">Неделя</span>
+            </div>
           </div>
-          <div class="stat-info">
-            <span class="stat-value">{{ stats.thisWeek }}</span>
-            <span class="stat-label">Неделя</span>
-          </div>
-        </div>
-      </template>
-    </Card>
+        </template>
+      </Card>
+    </div>
 
     <Card class="stat-card">
       <template #content>
@@ -69,9 +71,15 @@ const formatDuration = (minutes: number): string => {
 <style scoped>
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+.stats-left {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
 }
 
 .stat-card {
@@ -139,11 +147,36 @@ const formatDuration = (minutes: number): string => {
   color: var(--surface-500);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .stats-left {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .stat-card :deep(.p-card-content) {
+    padding: 0.75rem;
+  }
+
+  .stat-content {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    gap: 0.5rem;
+  }
+
+  .stats-left {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
-    margin-bottom: 1rem;
   }
 
   .stat-card :deep(.p-card-content) {

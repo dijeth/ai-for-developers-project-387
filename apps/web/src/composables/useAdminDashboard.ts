@@ -44,19 +44,25 @@ export function useAdminBookings() {
   };
 
   const deleteBooking = async (id: string) => {
+    isLoading.value = true;
+    error.value = null;
     try {
-      // Mock implementation - log to console as requested
-      console.log(`[MOCK] Deleting booking ${id}`);
+      const response = await fetch(`${ADMIN_API_BASE_URL}/bookings/${id}`, {
+        method: 'DELETE'
+      });
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!response.ok) {
+        throw new Error('Failed to delete booking');
+      }
 
       // Remove from local list
       bookings.value = bookings.value.filter(b => b.id !== id);
       return true;
     } catch (e) {
-      console.error('Failed to delete booking:', e);
+      error.value = e instanceof Error ? e.message : 'Unknown error';
       throw e;
+    } finally {
+      isLoading.value = false;
     }
   };
 

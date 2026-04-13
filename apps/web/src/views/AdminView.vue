@@ -33,7 +33,6 @@ const bookingToCancel = ref<Booking | null>(null);
 const {
   bookings: statsBookings,
   fetchBookings: fetchStatsBookings,
-  deleteBooking: deleteStatsBooking,
 } = useAdminBookings();
 
 const {
@@ -199,22 +198,11 @@ const handleCancelBooking = (bookingId: string) => {
 
 const confirmCancelBooking = async () => {
   if (bookingToCancel.value) {
-    const today = new Date();
-    const isCurrentMonthBooking =
-      new Date(bookingToCancel.value.startTime).getMonth() ===
-        today.getMonth() &&
-      new Date(bookingToCancel.value.startTime).getFullYear() ===
-        today.getFullYear();
-
     // Delete from month view
     await deleteMonthBooking(bookingToCancel.value.id);
 
-    // If it's current month, also delete from stats
-    if (isCurrentMonthBooking) {
-      await deleteStatsBooking(bookingToCancel.value.id);
-      // Refresh stats
-      await loadStatsBookings();
-    }
+    // Refresh stats (bookings stats are always for current month)
+    await loadStatsBookings();
 
     // Refresh current calendar month
     await loadBookingsForMonth(currentMonth.value);
@@ -238,7 +226,7 @@ const confirmCancelBooking = async () => {
         <Button
           label="Редактировать профиль"
           icon="pi pi-user-edit"
-          severity="secondary"
+          severity="primary"
           class="edit-profile-btn"
           @click="handleEditProfile"
         />

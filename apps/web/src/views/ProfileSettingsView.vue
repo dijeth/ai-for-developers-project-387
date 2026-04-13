@@ -120,6 +120,10 @@ const handleProfileSave = async (data: Partial<Owner>) => {
   isSavingProfile.value = true;
   try {
     await updateOwner(data);
+
+    // Reload working hours as they may have been adjusted due to timezone change
+    await fetchWorkingHours();
+
     toast.add({
       severity: "success",
       summary: "Успешно",

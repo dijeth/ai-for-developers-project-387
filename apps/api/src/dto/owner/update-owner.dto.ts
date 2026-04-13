@@ -9,6 +9,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { IsTimezone } from '../validators/timezone.validator';
 
 export class UpdateOwnerDto {
   @IsString()
@@ -35,7 +36,7 @@ export class UpdateOwnerDto {
   @IsOptional()
   bookingMonthsAhead?: number;
 
-  @IsString()
+  @IsTimezone()
   @IsOptional()
   timezone?: string;
 }

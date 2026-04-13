@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Query } from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, Query } from '@nestjs/common';
 import { BookingApiService } from '../services/booking-api.service';
 import { BookingListResponseDto } from '../../dto/booking/booking.dto';
 
@@ -32,7 +32,7 @@ export class AdminBookingsController {
 
   @Delete('bookings/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteBooking(@Query('id') id: string): Promise<void> {
+  async deleteBooking(@Param('id') id: string): Promise<void> {
     await this.bookingApiService.deleteBooking(id);
   }
 }

@@ -8,6 +8,7 @@ import { TimeOffApiService } from './services/time-off-api.service';
 import { EventTypeApiService } from './services/event-type-api.service';
 import { BookingApiService } from './services/booking-api.service';
 import { WorkingHoursApiService } from './services/working-hours-api.service';
+import { TimezoneConverterService } from './services/timezone-converter.service';
 
 @Module({
   controllers: [
@@ -22,6 +23,7 @@ import { WorkingHoursApiService } from './services/working-hours-api.service';
     EventTypeApiService,
     BookingApiService,
     WorkingHoursApiService,
+    TimezoneConverterService,
   ],
 })
 export class AdminModule {}

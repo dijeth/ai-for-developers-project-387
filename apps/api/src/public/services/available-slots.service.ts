@@ -44,8 +44,14 @@ export class AvailableSlotsService {
     }
 
     // Parse dates
-    const startDate = this.parseDate(startDateStr);
+    let startDate = this.parseDate(startDateStr);
     const endDate = this.parseDate(endDateStr);
+
+    // Clamp start date to today if it's in the past
+    const today = startOfUTCDay(utcNow());
+    if (isUTCBefore(startDate, today)) {
+      startDate = today;
+    }
 
     // Get owner data
     const owner = await this.ownerService.findOne(this.ownerId);
@@ -98,11 +104,6 @@ export class AvailableSlotsService {
     }
 
     const today = startOfUTCDay(utcNow());
-
-    // Check that startDate is not in the past
-    if (isUTCBefore(startDate, today)) {
-      throw new BadRequestException('Start date must be today or in the future');
-    }
 
     // Calculate max allowed date: today + bookingMonthsAhead months
     const maxAllowedDate = addUTCMonths(today, bookingMonthsAhead);
