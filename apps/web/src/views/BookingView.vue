@@ -17,6 +17,8 @@ import {
   toUTCDateString,
   toUTCEndOfDayString,
 } from "../composables/useBooking";
+import { publicApi } from "../api";
+import { getMonthDateRange } from "../utils/date.utils";
 import EventTypeSelection from "../components/booking/EventTypeSelection.vue";
 import SlotPicker from "../components/booking/SlotPicker.vue";
 import BookingSuccess from "../components/booking/BookingSuccess.vue";
@@ -97,21 +99,18 @@ const fetchMonthSlots = async (eventTypeId: string, monthDate: Date) => {
     dateFrom = new Date().toISOString();
   } else {
     // For future months, use start of month
-    dateFrom = toUTCDateString(monthDate);
+    const { dateFrom: startOfMonth } = getMonthDateRange(monthDate);
+    dateFrom = startOfMonth;
   }
 
-  const dateTo = toUTCEndOfDayString(
-    new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0),
-  );
+  const { dateTo } = getMonthDateRange(monthDate);
 
-  // Reuse fetchSlots logic but store in monthlySlots
-  const response = await fetch(
-    `/api/event-types/${eventTypeId}/available-slots?dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`,
-  );
-  if (response.ok) {
-    const data = await response.json();
-    monthlySlots.value = data.slots;
-  }
+  // Use publicApi instead of raw fetch
+  const response = await publicApi.getAvailableSlots(eventTypeId, {
+    dateFrom,
+    dateTo
+  });
+  monthlySlots.value = response.slots || [];
 };
 
 // Load data on mount

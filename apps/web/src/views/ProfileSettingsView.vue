@@ -23,6 +23,7 @@ import {
   useAdminTimeOffs,
   useAdminWorkingHours,
 } from "../composables/useAdminDashboard";
+import { getMonthDateRange } from "../utils/date.utils";
 import type {
   Owner,
   DayOfWeek,
@@ -74,6 +75,9 @@ const eventTypeDialogVisible = ref(false);
 const selectedTimeOff = ref<WorkingHoursTimeOff | null>(null);
 const selectedEventType = ref<EventType | null>(null);
 
+// Track current month for TimeOff calendar to fetch bookings markers
+const currentTimeOffMonth = ref(new Date());
+
 const actualTimeOffs = computed(() => {
   const now = Date.now();
   return timeOffs.value.filter((timeOff) => {
@@ -104,6 +108,13 @@ const datesWithBookings = computed(() => {
 
   return dates;
 });
+
+// Handle month change in TimeOff dialog calendar
+const handleTimeOffMonthChange = async (newMonthDate: Date) => {
+  currentTimeOffMonth.value = newMonthDate;
+  const { dateFrom, dateTo } = getMonthDateRange(newMonthDate);
+  await fetchBookings({ dateFrom, dateTo });
+};
 
 // Load data on mount
 onMounted(async () => {
@@ -409,6 +420,7 @@ const handleEventTypeDelete = async (eventType: EventType) => {
         :max-date="maxBookingDate"
         :is-loading="isSavingTimeOff"
         @update:visible="timeOffDialogVisible = $event"
+        @month-change="handleTimeOffMonthChange"
         @save="handleTimeOffSave"
       />
 

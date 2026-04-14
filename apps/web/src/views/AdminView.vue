@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import type { Booking } from "../types/admin";
 import { useRouter } from "vue-router";
 import Button from "primevue/button";
 import Menu from "primevue/menu";
-import type { Booking } from "../types/admin";
 import {
   useAdminBookings,
   useAdminOwner,
   useAdminTimeOffs,
   useAdminWorkingHours,
   useBookingStats,
-  toUTCDateString,
-  toUTCEndOfDayString,
   formatDateLocal,
 } from "../composables/useAdminDashboard";
+import { getMonthDateRange } from "../utils/date.utils";
 import BookingStatsCards from "../components/admin/BookingStatsCards.vue";
 import BookingTable from "../components/admin/BookingTable.vue";
 import BaseCalendar from "../components/common/BaseCalendar.vue";
@@ -30,10 +29,8 @@ const showConfirmDialog = ref(false);
 const bookingToCancel = ref<Booking | null>(null);
 
 // Two separate composable instances - one for stats (current month), one for calendar/table (selected month)
-const {
-  bookings: statsBookings,
-  fetchBookings: fetchStatsBookings,
-} = useAdminBookings();
+const { bookings: statsBookings, fetchBookings: fetchStatsBookings } =
+  useAdminBookings();
 
 const {
   bookings: monthBookings,
@@ -135,25 +132,6 @@ const filterBookingsByDate = (bookings: Booking[], date: Date): Booking[] => {
   });
 };
 
-// Get month date range using browser's local timezone
-// Admin uses local timezone regardless of owner.timezone in profile
-const getMonthDateRange = (
-  date: Date,
-): { dateFrom: string; dateTo: string } => {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  // First day of month in browser's local timezone
-  const firstDay = new Date(year, month, 1);
-  // Last day of month in browser's local timezone
-  const lastDay = new Date(year, month + 1, 0);
-
-  return {
-    dateFrom: toUTCDateString(firstDay),
-    dateTo: toUTCEndOfDayString(lastDay),
-  };
-};
-
 // Load bookings for a specific month (for calendar/table)
 const loadBookingsForMonth = async (date: Date) => {
   const { dateFrom, dateTo } = getMonthDateRange(date);
@@ -162,8 +140,7 @@ const loadBookingsForMonth = async (date: Date) => {
 
 // Load current month bookings for stats (loaded once on mount, never changes with calendar navigation)
 const loadStatsBookings = async () => {
-  const now = new Date();
-  const { dateFrom, dateTo } = getMonthDateRange(now);
+  const { dateFrom, dateTo } = getMonthDateRange(new Date());
   await fetchStatsBookings({ dateFrom, dateTo });
 };
 

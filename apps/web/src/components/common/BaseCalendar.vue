@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import Calendar from 'primevue/calendar';
+import { computed, ref } from "vue";
+import Calendar from "primevue/calendar";
 
 interface Props {
   modelValue: Date;
@@ -10,37 +10,37 @@ interface Props {
   markedDates?: Set<string>;
   showLegend?: boolean;
   disabledTooltip?: string;
-  markerType?: 'primary' | 'success';
+  markerType?: "primary" | "success";
   legendLabel?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   minDate: () => new Date(),
   maxDate: null,
-  workingDays: () => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+  workingDays: () => ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
   markedDates: () => new Set<string>(),
   showLegend: false,
-  disabledTooltip: 'Выходной день',
-  markerType: 'primary',
-  legendLabel: 'Есть бронирования'
+  disabledTooltip: "Выходной день",
+  markerType: "primary",
+  legendLabel: "Есть бронирования",
 });
 
 const emit = defineEmits<{
-  'update:modelValue': [date: Date];
-  'month-change': [date: Date];
+  "update:modelValue": [date: Date];
+  "month-change": [date: Date];
 }>();
 
 // Day of week mapping (0=Sunday, 1=Monday, etc.)
-const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const dayMap = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 // Computed selected date for v-model
 const selectedDate = computed({
   get: () => props.modelValue,
   set: (value) => {
     if (value) {
-      emit('update:modelValue', value);
+      emit("update:modelValue", value);
     }
-  }
+  },
 });
 
 // Check if a specific date is a working day
@@ -54,7 +54,7 @@ const isWorkingDay = (year: number, month: number, day: number): boolean => {
 // Check if a specific date has a marker (booking/slot indicator)
 const hasMarker = (year: number, month: number, day: number): boolean => {
   // Create date key in YYYY-MM-DD format
-  const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   return props.markedDates.has(key);
 };
 
@@ -62,33 +62,35 @@ const hasMarker = (year: number, month: number, day: number): boolean => {
 const previousDate = ref<Date | null>(new Date(props.modelValue));
 
 // Handle model value update to detect month changes
-const handleModelValueUpdate = (value: Date | Date[] | (Date | null)[] | null | undefined) => {
+const handleModelValueUpdate = (
+  value: Date | Date[] | (Date | null)[] | null | undefined,
+) => {
   const date = Array.isArray(value) ? value[0] : value;
   if (!date || !previousDate.value) {
     if (date) previousDate.value = new Date(date);
     return;
   }
-  
+
   const prevMonth = previousDate.value.getMonth();
   const prevYear = previousDate.value.getFullYear();
   const newMonth = date.getMonth();
   const newYear = date.getFullYear();
-  
+
   if (newMonth !== prevMonth || newYear !== prevYear) {
-    emit('month-change', new Date(newYear, newMonth, 1));
+    emit("month-change", new Date(newYear, newMonth, 1));
   }
   previousDate.value = new Date(date);
 };
 
 // Handle month change event
 const handleMonthChange = (event: { month: number; year: number }) => {
-  const newDate = new Date(event.year, event.month, 1);
-  emit('month-change', newDate);
+  const newDate = new Date(event.year, event.month - 1, 1);
+  emit("month-change", newDate);
 };
 
 // Handle date selection
 const handleDateSelect = (date: Date) => {
-  emit('update:modelValue', date);
+  emit("update:modelValue", date);
 };
 
 // Computed max date for calendar
@@ -98,7 +100,7 @@ const calendarMaxDate = computed(() => {
 
 // Key to force re-render of date slots when markedDates changes
 const markedDatesKey = computed(() => {
-  return Array.from(props.markedDates).sort().join(',');
+  return Array.from(props.markedDates).sort().join(",");
 });
 </script>
 
@@ -121,30 +123,42 @@ const markedDatesKey = computed(() => {
           class="calendar-date"
           :class="{
             'has-marker': hasMarker(date.year, date.month, date.day),
-            'marker-type-primary': hasMarker(date.year, date.month, date.day) && markerType === 'primary',
-            'marker-type-success': hasMarker(date.year, date.month, date.day) && markerType === 'success',
+            'marker-type-primary':
+              hasMarker(date.year, date.month, date.day) &&
+              markerType === 'primary',
+            'marker-type-success':
+              hasMarker(date.year, date.month, date.day) &&
+              markerType === 'success',
             'is-working-day': isWorkingDay(date.year, date.month, date.day),
-            'is-non-working-day': !isWorkingDay(date.year, date.month, date.day)
+            'is-non-working-day': !isWorkingDay(
+              date.year,
+              date.month,
+              date.day,
+            ),
           }"
-          :title="!isWorkingDay(date.year, date.month, date.day) ? disabledTooltip : undefined"
+          :title="
+            !isWorkingDay(date.year, date.month, date.day)
+              ? disabledTooltip
+              : undefined
+          "
         >
           {{ date.day }}
-          <span 
-            v-if="hasMarker(date.year, date.month, date.day)" 
+          <span
+            v-if="hasMarker(date.year, date.month, date.day)"
             class="marker-indicator"
           ></span>
         </span>
       </template>
     </Calendar>
-    
+
     <!-- Legend -->
     <div v-if="showLegend" class="calendar-legend">
       <div class="legend-item">
-        <span 
-          class="legend-dot" 
-          :class="{ 
+        <span
+          class="legend-dot"
+          :class="{
             'has-markers-primary': markerType === 'primary',
-            'has-markers-success': markerType === 'success'
+            'has-markers-success': markerType === 'success',
           }"
         ></span>
         <span class="legend-label">{{ legendLabel }}</span>
@@ -215,7 +229,8 @@ const markedDatesKey = computed(() => {
   position: relative;
 }
 
-.base-calendar :deep(.p-datepicker-calendar td:not(:has(.is-non-working-day)) > span:hover) {
+.base-calendar
+  :deep(.p-datepicker-calendar td:not(:has(.is-non-working-day)) > span:hover) {
   background: var(--surface-100);
 }
 
@@ -261,7 +276,8 @@ const markedDatesKey = computed(() => {
 }
 
 /* Non-working days - disabled */
-.base-calendar :deep(.p-datepicker-calendar td:has(.is-non-working-day) > span) {
+.base-calendar
+  :deep(.p-datepicker-calendar td:has(.is-non-working-day) > span) {
   color: var(--surface-300);
   cursor: not-allowed;
   pointer-events: none;
@@ -269,40 +285,69 @@ const markedDatesKey = computed(() => {
 }
 
 /* Day with marker - highlighted background */
-.base-calendar :deep(.p-datepicker-calendar td:has(.has-marker):has(.is-working-day) > span) {
+.base-calendar
+  :deep(
+    .p-datepicker-calendar td:has(.has-marker):has(.is-working-day) > span
+  ) {
   background: var(--primary-100);
   color: var(--primary-700);
   font-weight: 600;
 }
 
 /* Selected day with marker - only for working days */
-.base-calendar :deep(.p-datepicker-calendar td.p-highlight:has(.has-marker):has(.is-working-day) > span) {
+.base-calendar
+  :deep(
+    .p-datepicker-calendar
+      td.p-highlight:has(.has-marker):has(.is-working-day)
+      > span
+  ) {
   background: var(--primary-color);
   color: white;
 }
 
-.base-calendar :deep(.p-datepicker-calendar td.p-highlight:has(.has-marker):has(.is-working-day) .marker-indicator) {
+.base-calendar
+  :deep(
+    .p-datepicker-calendar
+      td.p-highlight:has(.has-marker):has(.is-working-day)
+      .marker-indicator
+  ) {
   background: white;
 }
 
 /* Success marker type (for available slots) - green */
-.base-calendar :deep(.p-datepicker-calendar td:has(.marker-type-success):has(.is-working-day) > span) {
+.base-calendar
+  :deep(
+    .p-datepicker-calendar
+      td:has(.marker-type-success):has(.is-working-day)
+      > span
+  ) {
   background: var(--green-100);
   color: var(--green-700);
   font-weight: 600;
 }
 
-.base-calendar :deep(.p-datepicker-calendar td:has(.marker-type-success) .marker-indicator) {
+.base-calendar
+  :deep(.p-datepicker-calendar td:has(.marker-type-success) .marker-indicator) {
   background: var(--green-500);
 }
 
 /* Selected day with success marker */
-.base-calendar :deep(.p-datepicker-calendar td.p-highlight:has(.marker-type-success):has(.is-working-day) > span) {
+.base-calendar
+  :deep(
+    .p-datepicker-calendar
+      td.p-highlight:has(.marker-type-success):has(.is-working-day)
+      > span
+  ) {
   background: var(--green-500);
   color: white;
 }
 
-.base-calendar :deep(.p-datepicker-calendar td.p-highlight:has(.marker-type-success):has(.is-working-day) .marker-indicator) {
+.base-calendar
+  :deep(
+    .p-datepicker-calendar
+      td.p-highlight:has(.marker-type-success):has(.is-working-day)
+      .marker-indicator
+  ) {
   background: white;
 }
 
@@ -351,7 +396,7 @@ const markedDatesKey = computed(() => {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .base-calendar :deep(.p-datepicker-calendar td > span) {
     width: 2.25rem;
     height: 2.25rem;

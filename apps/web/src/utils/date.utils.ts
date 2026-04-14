@@ -179,6 +179,32 @@ export function getLocalDayOfWeek(date: Date): number {
   return dayjs(date).day();
 }
 
+/**
+ * Gets month date range (first and last day) and converts to UTC ISO strings.
+ * Used for calendar month-change API calls.
+ *
+ * @param date - Any date within the target month (typically from calendar's month-change event)
+ * @returns Object with dateFrom (start of month UTC) and dateTo (end of month UTC)
+ *
+ * Example:
+ *   getMonthDateRange(new Date(2025, 3, 1)) // April 2025
+ *   // Returns:
+ *   // {
+ *   //   dateFrom: "2025-03-31T21:00:00.000Z", // for MSK+3
+ *   //   dateTo: "2025-04-30T20:59:59.999Z"
+ *   // }
+ */
+export function getMonthDateRange(date: Date): { dateFrom: string; dateTo: string } {
+  const d = dayjs(date);
+  const startOfMonth = d.startOf('month');
+  const endOfMonth = d.endOf('month');
+
+  return {
+    dateFrom: startOfMonth.utc().toISOString(),
+    dateTo: endOfMonth.utc().toISOString()
+  };
+}
+
 // ============================================================================
 // Timezone-specific utilities for Admin (using owner's timezone)
 // ============================================================================

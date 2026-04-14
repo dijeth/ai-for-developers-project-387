@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import type { Booking, Owner, WorkingHours, WorkingHoursTimeOff, EventType, BookingStats, DateRangeFilter } from '../types/admin';
 import { fromISO } from '@calendar/date-utils';
+import { adminApi } from '../api';
 import {
   isSameLocalDay,
   startOfLocalWeek,
@@ -22,20 +23,8 @@ export function useAdminBookings() {
     isLoading.value = true;
     error.value = null;
     try {
-      let url = `${ADMIN_API_BASE_URL}/bookings`;
-      if (filter) {
-        const params = new URLSearchParams();
-        params.append('dateFrom', filter.dateFrom);
-        params.append('dateTo', filter.dateTo);
-        url += `?${params.toString()}`;
-      }
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch bookings');
-      }
-      const data = await response.json();
-      bookings.value = data.bookings;
+      const data = await adminApi.listBookings(filter);
+      bookings.value = data;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error';
     } finally {
@@ -47,14 +36,7 @@ export function useAdminBookings() {
     isLoading.value = true;
     error.value = null;
     try {
-      const response = await fetch(`${ADMIN_API_BASE_URL}/bookings/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete booking');
-      }
-
+      await adminApi.deleteBooking(id);
       // Remove from local list
       bookings.value = bookings.value.filter(b => b.id !== id);
       return true;

@@ -26,6 +26,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   "update:visible": [visible: boolean];
   save: [payload: TimeOffPayload];
+  "month-change": [date: Date];
 }>();
 
 const selectedDate = ref(new Date());
@@ -107,6 +108,10 @@ const handleCancel = () => {
   emit("update:visible", false);
 };
 
+const handleMonthChange = (date: Date) => {
+  emit("month-change", date);
+};
+
 const handleSave = () => {
   validationError.value = null;
 
@@ -163,6 +168,7 @@ const handleSave = () => {
           :max-date="maxDate"
           :show-legend="true"
           legend-label="Есть бронирования"
+          @month-change="handleMonthChange"
         />
       </div>
 

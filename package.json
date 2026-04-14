@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev watch:types",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "docker:build": "docker build -t calendar-booking .",

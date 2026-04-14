@@ -26,6 +26,7 @@ npm run dev
 # - api-spec watch mode: recompiles .tsp → openapi.yaml
 # - Prism proxy on port 4010 (forwards to NestJS on :3001)
 # - Vite dev server on port 3000
+# - Type generation watch mode: auto-updates TypeScript types from openapi.yaml changes
 
 # Build for production (tsp:compile → build pipeline)
 npm run build
@@ -67,6 +68,39 @@ Order matters:
   - `npm run dev` - Vite dev server with HMR on port 3000
   - `npm run build` - `vue-tsc && vite build`
   - `npm run copy-themes` - copies PrimeVue themes to public/
+  - `npm run generate:types` - regenerate TypeScript types from OpenAPI spec
+  - `npm run watch:types` - auto-regenerate types when `openapi.yaml` changes (run in parallel with `npm run dev`)
+
+#### API Client Architecture
+
+All HTTP requests must go through the centralized API clients. Never use raw `fetch` directly in composables or components.
+
+**Location**: `apps/web/src/api/`
+
+```typescript
+// Import from centralized API module
+import { publicApi, adminApi } from '@/api'
+
+// Public API (no auth required)
+const eventTypes = await publicApi.listEventTypes()
+const slots = await publicApi.getAvailableSlots(eventTypeId, dateFrom, dateTo)
+
+// Admin API
+const bookings = await adminApi.listBookings({ dateFrom, dateTo })
+await adminApi.deleteBooking(id)
+```
+
+**Adding new API types**:
+1. Generate types from updated OpenAPI: `npm run generate:types`
+2. If needed, add type alias in `src/api/types.ts` for cleaner naming
+3. Add new API method in `src/api/public.ts` or `src/api/admin.ts`
+
+**Files**:
+- `src/api/client.ts` - HTTP client factory with error handling
+- `src/api/types.ts` - Type aliases from generated OpenAPI types
+- `src/api/public.ts` - Public API methods
+- `src/api/admin.ts` - Admin API methods
+- `src/types/generated/api-types.ts` - Auto-generated from OpenAPI (DO NOT EDIT)
 
 ### apps/api
 

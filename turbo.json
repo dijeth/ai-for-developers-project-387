@@ -22,6 +22,11 @@
     },
     "typecheck": {
       "cache": true
+    },
+    "watch:types": {
+      "cache": false,
+      "persistent": true,
+      "inputs": ["packages/contracts/openapi.yaml"]
     }
   }
 }
