@@ -1,18 +1,18 @@
 # Docker Compose override for fast E2E test debugging
-# 
+#
 # Usage (debug without full rebuild):
 #   1. Build the code locally first:
 #      npm run build -w api
 #      npm run build -w web
 #   2. Start E2E services with override:
-#      docker compose -f docker-compose.yml -f docker-compose.override.yml --profile e2e up -d
+#      docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e up -d
 #
 # This mounts pre-built code from host, allowing:
 # - Changes without docker rebuild
 # - Fast iteration when debugging tests
 # - Access to API logs for debugging
 
-version: '3.8'
+version: "3.8"
 
 services:
   api-e2e:
@@ -22,13 +22,13 @@ services:
       - ./apps/api/dist:/app/apps/api/dist:ro
       - ./apps/api/prisma:/app/apps/api/prisma:ro
       - api_logs:/app/logs
-    
+
     environment:
       # Enable debug logging to see 400 error details
       - LOG_LEVEL=debug
       - DEBUG=true
       - TZ=UTC
-    
+
     # Override command to enable more verbose output
     command: >
       sh -c "
@@ -47,10 +47,10 @@ services:
       # Mount built frontend directly (bypass web-builder)
       - ./apps/web/dist:/usr/share/nginx/html:ro
       - ./apps/web/public/themes:/usr/share/nginx/html/themes:ro
-    
+
     environment:
       - TZ=UTC
-    
+
     # Override depends_on - no need to wait for web-builder
     depends_on:
       api-e2e:

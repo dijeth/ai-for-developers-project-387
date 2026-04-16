@@ -116,7 +116,7 @@ npm run build -w api
 npm run build -w web
 
 # 2. Start with override (mounts local builds)
-docker compose -f docker-compose.yml -f docker-compose.override.yml --profile e2e up -d
+docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e up -d
 
 # 3. Run tests
 cd apps/e2e && npx playwright test

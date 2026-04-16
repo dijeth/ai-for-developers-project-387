@@ -14,6 +14,9 @@
     "e2e": "docker compose --profile e2e up --build -d --wait && cd apps/e2e && npx playwright test",
     "e2e:ui": "docker compose --profile e2e up --build -d --wait && cd apps/e2e && npx playwright test --ui",
     "e2e:down": "docker compose --profile e2e down -v",
+    "e2e:local": "docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e up --build -d --wait && cd apps/e2e && npx playwright test",
+    "e2e:local:ui": "docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e up --build -d --wait && cd apps/e2e && npx playwright test --ui",
+    "e2e:local:down": "docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e down -v",
     "start": "docker compose --profile prod up --build",
     "start:down": "docker compose --profile prod down",
     "docker:clean": "docker compose down -v"

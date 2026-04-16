@@ -8,7 +8,7 @@
     "build": "vue-tsc && vite build",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview",
-    "copy-themes": "mkdir -p public/themes && cp ../../node_modules/primevue/resources/themes/lara-light-blue/theme.css public/themes/light.css && cp ../../node_modules/primevue/resources/themes/lara-dark-blue/theme.css public/themes/dark.css",
+    "copy-themes": "rm -rf public/themes && mkdir -p public/themes && cp ../../node_modules/primevue/resources/themes/lara-light-blue/theme.css public/themes/light.css && cp ../../node_modules/primevue/resources/themes/lara-dark-blue/theme.css public/themes/dark.css",
     "generate:types": "openapi-typescript ../../packages/contracts/openapi.yaml -o ./src/types/generated/api-types.ts",
     "watch:types": "nodemon --watch ../../packages/contracts/openapi.yaml --exec 'npm run generate:types'",
     "postinstall": "npm run copy-themes"

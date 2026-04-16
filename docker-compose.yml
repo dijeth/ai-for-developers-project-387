@@ -5,7 +5,7 @@
 #   docker compose --profile prod up     # Production (Hugging Face)
 #
 # For fast E2E debug without rebuild:
-#   docker compose -f docker-compose.yml -f docker-compose.override.yml --profile e2e up
+#   docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e up
 
 version: "3.8"
 
@@ -110,13 +110,20 @@ services:
     working_dir: /app/apps/api
     command: >
       sh -c "
+        npm run build -w @calendar/date-utils &&
+        npm run build &&
+        npx prisma generate &&
         npx prisma db push --accept-data-loss &&
         npm run db:seed &&
         node dist/src/main
       "
     container_name: calendar-api-e2e
     healthcheck:
-      disable: true
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3001/api/owner"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   web-builder-e2e:
     <<: *api-base
