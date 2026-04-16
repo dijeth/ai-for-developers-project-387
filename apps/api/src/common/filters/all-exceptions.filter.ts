@@ -8,6 +8,7 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 
 interface ErrorResponse {
@@ -18,9 +19,13 @@ interface ErrorResponse {
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
+    const request = ctx.getRequest();
     const response = ctx.getResponse();
+    const { method, url } = request;
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let errorResponse: ErrorResponse = {
@@ -29,6 +34,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     if (exception instanceof HttpException) {
+      this.logger.debug(
+        `HTTP Exception ${method} ${url}: ${exception.getStatus()} - ${exception.message}`,
+      );
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
@@ -78,6 +86,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
           message: this.extractMessage(exceptionResponse),
         };
       }
+    } else {
+      this.logger.debug(
+        `Unhandled Exception ${method} ${url}: ${exception instanceof Error ? exception.message : 'Unknown error'}`,
+      );
     }
 
     response.status(status).json(errorResponse);

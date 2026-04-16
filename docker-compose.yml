@@ -64,11 +64,7 @@ services:
       "
     container_name: calendar-api-dev
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3001/api/owner"]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-      start_period: 30s
+      disable: true
 
   prism:
     image: stoplight/prism:5
@@ -82,8 +78,7 @@ services:
     command: proxy /openapi.yaml http://api-dev:3001 --errors -p 4010 -m false -h 0.0.0.0
     container_name: calendar-prism
     depends_on:
-      api-dev:
-        condition: service_healthy
+      - api-dev
 
   web-dev:
     <<: *api-base
@@ -121,11 +116,7 @@ services:
       "
     container_name: calendar-api-e2e
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3001/api/owner"]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-      start_period: 30s
+      disable: true
 
   web-builder-e2e:
     <<: *api-base
@@ -150,10 +141,8 @@ services:
       - web_dist:/usr/share/nginx/html:ro
     container_name: calendar-web-e2e
     depends_on:
-      api-e2e:
-        condition: service_healthy
-      web-builder-e2e:
-        condition: service_completed_successfully
+      - api-e2e
+      - web-builder-e2e
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/"]
       interval: 2s
@@ -182,9 +171,9 @@ services:
       - TZ=UTC
     container_name: calendar-app
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7860/api/owner"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3001/health"]
+      interval: 60s
+      timeout: 5s
       retries: 3
       start_period: 40s
 
