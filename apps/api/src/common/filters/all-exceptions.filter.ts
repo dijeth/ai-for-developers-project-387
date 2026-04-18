@@ -38,10 +38,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       this.logger.debug(
-        `HTTP Exception ${method} ${url}: ${exception.getStatus()} - ${exception.message}`,
+        `HTTP Exception ${method} ${url}: ${exception.getStatus()} - ${exception.message} - ${JSON.stringify(exception.getResponse())}`,
       );
-      this.logger.debug(`Query params: ${JSON.stringify(query)}`);
-      this.logger.debug(`Route params: ${JSON.stringify(params)}`);
+
+      this.logger.debug(
+        `Stack trace ${exception instanceof Error ? exception.stack : 'No stack trace available'}`,
+      );
+      
+      if (query && Object.keys(query).length > 0) {
+        this.logger.debug(`Query params: ${JSON.stringify(query)}`);
+      }
+      
+      if (params && Object.keys(params).length > 0) {
+        this.logger.debug(`Route params: ${JSON.stringify(params)}`);
+      }
+      
       if (body && Object.keys(body).length > 0) {
         this.logger.debug(`Request body: ${JSON.stringify(body)}`);
       }
