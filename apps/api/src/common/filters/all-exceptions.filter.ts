@@ -29,12 +29,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log input data at debug level for troubleshooting
     this.logger.debug(`Request ${method} ${url}`);
-    this.logger.debug(`Query params: ${JSON.stringify(query)}`);
-    this.logger.debug(`Route params: ${JSON.stringify(params)}`);
-    if (body && Object.keys(body).length > 0) {
-      this.logger.debug(`Request body: ${JSON.stringify(body)}`);
-    }
-
+    
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let errorResponse: ErrorResponse = {
       code: 'INTERNAL_ERROR',
@@ -45,6 +40,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.debug(
         `HTTP Exception ${method} ${url}: ${exception.getStatus()} - ${exception.message}`,
       );
+      this.logger.debug(`Query params: ${JSON.stringify(query)}`);
+      this.logger.debug(`Route params: ${JSON.stringify(params)}`);
+      if (body && Object.keys(body).length > 0) {
+        this.logger.debug(`Request body: ${JSON.stringify(body)}`);
+      }
+      
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 

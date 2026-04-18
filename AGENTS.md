@@ -24,9 +24,8 @@ npm install
 
 # Development (Docker Compose with all services)
 npm run dev
-# - TypeSpec watcher: .tsp → openapi.yaml
-# - TypeScript types watcher: openapi.yaml → generated types
-# - API server (:3001) with auto-migrations and seeding
+# - Contracts watcher: TypeSpec + web API types generation
+# - API init service (db push + seed once) and API dev server (:3001)
 # - Prism proxy (:4010) for OpenAPI validation
 # - Vite dev server (:3000) with HMR
 
@@ -47,12 +46,13 @@ npm run typecheck
 npm run docker:clean  # Stop all containers and remove volumes
 ```
 
-## Build Pipeline (Turbo)
+## Build Pipeline
 
-Order matters:
+Build order remains important:
 
-1. `tsp:compile` (packages/api-spec) → generates `packages/contracts/openapi.yaml`
-2. `build` depends on `^tsp:compile` (upstream completion)
+1. `packages/api-spec` compiles TypeSpec to `packages/contracts/openapi.yaml`
+2. `apps/web` generates TypeScript API types from `packages/contracts/openapi.yaml`
+3. Application builds consume generated artifacts
 
 **Never modify `packages/contracts/openapi.yaml` manually** — generated from TypeSpec.
 
@@ -85,12 +85,13 @@ Order matters:
 
 **API Target Configuration:**
 The Vite dev server proxy target can be configured via `VITE_API_TARGET` environment variable:
+
 - Default: `http://localhost:4010` (Prism proxy for dev with OpenAPI validation)
 - For E2E: `http://localhost:3001` (direct to backend)
 
 ```typescript
 // vite.config.ts - uses VITE_API_TARGET env var
-const API_TARGET = process.env.VITE_API_TARGET || 'http://localhost:4010'
+const API_TARGET = process.env.VITE_API_TARGET || "http://localhost:4010";
 ```
 
 #### API Client Architecture
@@ -101,23 +102,25 @@ All HTTP requests must go through the centralized API clients. Never use raw `fe
 
 ```typescript
 // Import from centralized API module
-import { publicApi, adminApi } from '@/api'
+import { publicApi, adminApi } from "@/api";
 
 // Public API (no auth required)
-const eventTypes = await publicApi.listEventTypes()
-const slots = await publicApi.getAvailableSlots(eventTypeId, dateFrom, dateTo)
+const eventTypes = await publicApi.listEventTypes();
+const slots = await publicApi.getAvailableSlots(eventTypeId, dateFrom, dateTo);
 
 // Admin API
-const bookings = await adminApi.listBookings({ dateFrom, dateTo })
-await adminApi.deleteBooking(id)
+const bookings = await adminApi.listBookings({ dateFrom, dateTo });
+await adminApi.deleteBooking(id);
 ```
 
 **Adding new API types**:
+
 1. Generate types from updated OpenAPI: `npm run generate:types`
 2. If needed, add type alias in `src/api/types.ts` for cleaner naming
 3. Add new API method in `src/api/public.ts` or `src/api/admin.ts`
 
 **Files**:
+
 - `src/api/client.ts` - HTTP client factory with error handling
 - `src/api/types.ts` - Type aliases from generated OpenAPI types
 - `src/api/public.ts` - Public API methods
@@ -172,11 +175,13 @@ npm run e2e:down
 ### Architecture
 
 E2E tests use Docker compose profile `e2e` which starts:
+
 - API server (`api-e2e`) on port 3001 with production build
 - Nginx (`web-e2e`) on port 3000 serving built frontend
 - Test database (isolated SQLite)
 
 **Test execution flow:**
+
 ```
 Playwright → Chromium → http://localhost:3000 → Nginx → /api → NestJS (:3001)
 ```
@@ -184,6 +189,7 @@ Playwright → Chromium → http://localhost:3000 → Nginx → /api → NestJS 
 Note: E2E tests proxy directly to backend (no Prism) to match production behavior. Prism is only used in development for OpenAPI validation.
 
 **Files:**
+
 - `apps/e2e/tests/` - Test specs
   - `smoke.spec.ts` - Infrastructure and connectivity tests
   - `booking.spec.ts` - User booking flow tests
@@ -215,24 +221,26 @@ npm run e2e:local:down
 ### Writing Tests
 
 **Basic smoke test example:**
-```typescript
-import { test, expect } from '@playwright/test'
-import { setupTestDatabase } from '../fixtures/db.js'
 
-test.describe('My Feature', () => {
+```typescript
+import { test, expect } from "@playwright/test";
+import { setupTestDatabase } from "../fixtures/db.js";
+
+test.describe("My Feature", () => {
   // Reset DB once per test file
   test.beforeAll(async () => {
-    await setupTestDatabase()
-  })
+    await setupTestDatabase();
+  });
 
-  test('user can view booking page', async ({ page }) => {
-    await page.goto('/booking')
-    await expect(page.locator('body')).toBeVisible()
-  })
-})
+  test("user can view booking page", async ({ page }) => {
+    await page.goto("/booking");
+    await expect(page.locator("body")).toBeVisible();
+  });
+});
 ```
 
 **Test patterns:**
+
 - Use `test.beforeAll` for per-file data seeding (faster than per-test)
 - Use unique identifiers (timestamps/random) to avoid data conflicts
 - Single worker (`workers: 1`) for SQLite safety
@@ -379,22 +387,23 @@ npm run docker:clean # Stop all containers and remove volumes (clears DB!)
 All environments use unified `docker-compose.yml` with profiles:
 
 **Development Profile (`--profile dev`):**
+
 ```
-┌─────────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐
-│  spec-      │ → │ type-   │   │  api-   │   │  web-   │
-│  watcher    │   │ watcher │   │  dev    │ ← │  dev    │
-│ (:4010 tsp) │   │(types)  │   │ (:3001) │   │ (:3000) │
-└─────────────┘   └─────────┘   └────▲────┘   └────┬────┘
-                                     │              │
-                                     └──────────────┘
-                                           │
-                                    ┌─────────────┐
-                                    │   Prism     │
-                                    │   (:4010)   │
+┌────────────────────┐      ┌──────────────┐      ┌─────────────┐
+│ contracts-watcher  │ ───▶ │    prism     │ ◀─── │   web-dev   │
+│  (spec + types)    │      │   (:4010)    │      │   (:3000)   │
+└─────────┬──────────┘      └──────▲───────┘      └─────────────┘
+      │                          │
+      ▼                          │
+┌────────────────────┐               │
+│    api-dev-init    │ ───────────▶ ┌─────────────┐
+│  (db push + seed)  │              │   api-dev   │
+└────────────────────┘              │   (:3001)   │
                                     └─────────────┘
 ```
 
 **E2E Profile (`--profile e2e`):**
+
 ```
 ┌─────────────┐      ┌─────────────┐
 │  web-e2e    │─────▶│   api-e2e   │
@@ -404,6 +413,7 @@ All environments use unified `docker-compose.yml` with profiles:
 ```
 
 **Production Profile (`--profile prod`):**
+
 ```
 ┌─────────────────────────────────────────────┐
 │              Nginx (Port 7860)              │
@@ -418,7 +428,9 @@ All environments use unified `docker-compose.yml` with profiles:
 
 - **Unified compose file**: `docker-compose.yml` with profiles for dev/e2e/prod
 - **SQLite persistence**: Mount volume at `/data` (Hugging Face Spaces compatible)
-- **Health check**: `GET /api/owner` on port 7860
+- **Health checks**:
+  - Compose app health check uses backend `GET /health` on port 3001
+  - Startup readiness in `docker/start.sh` waits for `GET /api/owner`
 - **Multi-stage build**: Optimized for production (see `Dockerfile`)
 
 ## Other Notes

@@ -12,241 +12,186 @@ npm run e2e              # Start E2E services and run tests
 npm run e2e:ui           # Interactive UI mode
 npm run e2e:down         # Stop E2E services
 
+# Local E2E debug (host builds + override)
+npm run e2e:local
+npm run e2e:local:ui
+npm run e2e:local:down
+
 # Production / Hugging Face
 npm run start            # Production container on port 7860
 npm run start:down       # Stop production container
 
 # Cleanup
-npm run docker:clean     # Stop all containers and remove volumes (clears DB!)
+npm run docker:clean     # Stop all containers and remove volumes (clears DB)
 ```
 
-## Docker Compose Profiles
+## Compose Profiles
 
-All environments use unified `docker-compose.yml` with profiles:
+All environments use a single compose file: docker-compose.yml.
 
-| Profile | Services | Usage |
-|---------|----------|-------|
-| `dev` | spec-watcher, type-watcher, api-dev, prism, web-dev | Local development |
-| `e2e` | api-e2e, web-builder-e2e, web-e2e | E2E testing |
-| `prod` | app | Production / Hugging Face |
+| Profile | Services                                                 | Purpose                                   |
+| ------- | -------------------------------------------------------- | ----------------------------------------- |
+| dev     | contracts-watcher, api-dev-init, api-dev, prism, web-dev | Local development with OpenAPI validation |
+| e2e     | api-e2e, web-e2e                                         | Deterministic Playwright environment      |
+| prod    | app                                                      | Production runtime (Hugging Face Spaces)  |
 
 ## Development Profile
 
-### Prerequisites
-- Docker (with Docker Compose plugin)
-
-### Commands
+### Start and Stop
 
 ```bash
-# Start development environment
+# Start
 npm run dev
-# Or explicitly:
-docker compose --profile dev up --build
 
 # Stop
 docker compose --profile dev down
-
-# View logs
-docker compose logs -f api-dev
-docker compose logs -f web-dev
-docker compose logs -f prism
-```
-
-### Development Architecture
-
-```
-┌─────────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐
-│  spec-      │ → │ type-   │   │  api-   │   │  web-   │
-│  watcher    │   │ watcher │   │  dev    │ ← │  dev    │
-│ (:4010 tsp) │   │(types)  │   │ (:3001) │   │ (:3000) │
-└─────────────┘   └─────────┘   └────▲────┘   └────┬────┘
-                                     │              │
-                                     └──────────────┘
-                                           │
-                                    ┌─────────────┐
-                                    │   Prism     │
-                                    │   (:4010)   │
-                                    └─────────────┘
-```
-
-**Services:**
-- `spec-watcher`: TypeSpec watch mode (compiles `.tsp` → `openapi.yaml`)
-- `type-watcher`: Auto-regenerates TypeScript types from `openapi.yaml`
-- `api-dev`: NestJS dev server (:3001) with auto-migrations and seeding
-- `prism`: OpenAPI validation proxy (:4010)
-- `web-dev`: Vite dev server (:3000) with HMR
-
-## E2E Testing Profile
-
-### Commands
-
-```bash
-# Run tests (starts services automatically)
-npm run e2e
-
-# Interactive UI mode
-npm run e2e:ui
-
-# Stop E2E services
-npm run e2e:down
 ```
 
 ### Architecture
 
+```text
+contracts-watcher (TypeSpec + web types)
+  ├─ generates packages/contracts/openapi.yaml
+  └─ generates apps/web/src/types/generated/api-types.ts
+
+api-dev-init (one-shot)
+  └─ db push + seed to /data/dev.db
+
+api-dev (:3001)
+prism  (:4010) proxy -> api-dev
+web-dev (:3000) proxy /api -> prism
 ```
-┌─────────────┐      ┌─────────────┐
-│  web-e2e    │─────▶│   api-e2e   │
-│  (nginx)    │      │   (:3001)   │
-│  (:3000)    │      │   SQLite    │
-└─────────────┘      └─────────────┘
-```
 
-**Services:**
-- `api-e2e`: Production build of API on port 3001
-- `web-builder-e2e`: Builds frontend for testing
-- `web-e2e`: Nginx serving built frontend on port 3000
+### Service Notes
 
-### Fast Debug Mode
+- contracts-watcher runs initial generation, then keeps both watchers alive.
+- api-dev-init is a one-shot initializer and must complete successfully before api-dev starts.
+- prism restarts automatically when packages/contracts/openapi.yaml changes via docker compose develop.watch.
+- web-dev starts only after contracts-watcher is healthy and prism is running.
 
-For debugging without full Docker rebuild:
+## E2E Profile
+
+### Start and Stop
 
 ```bash
-# 1. Build locally first
+# Start + run tests
+npm run e2e
+
+# UI mode
+npm run e2e:ui
+
+# Stop
+docker compose --profile e2e down -v
+```
+
+### Architecture
+
+```text
+web-e2e (:3000, nginx)
+  └─ proxies /api -> api-e2e:3001
+
+api-e2e (:3001)
+  ├─ build date-utils + api
+  ├─ prisma generate + db push
+  └─ start prod server (no startup seed)
+```
+
+### Why Separate E2E Profile
+
+- No Prism or dev watchers in the test path.
+- Stable startup and health checks for CI.
+- Database reset/seed is controlled by tests through api/testing/reset endpoint.
+
+### Local E2E Debug Mode
+
+Use docker-compose.override.local.yml to mount host-built artifacts:
+
+```bash
+# Build host artifacts first
 npm run build -w api
 npm run build -w web
 
-# 2. Start with override (mounts local builds)
-docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e up -d
-
-# 3. Run tests
-cd apps/e2e && npx playwright test
+# Start e2e with override and run tests
+npm run e2e:local
 ```
 
-## Production Profile (Hugging Face)
+In local debug mode:
 
-### Architecture
+- api-e2e uses mounted dist and prisma folders.
+- web-e2e serves mounted apps/web/dist.
+- API logs are written to volume api_logs.
 
-```
-┌─────────────────────────────────────────────┐
-│              Nginx (Port 7860)              │
-│  ┌──────────────┐      ┌──────────────────┐ │
-│  │ Static files │      │ Proxy /api/*     │ │
-│  │ (Vue build)  │──────│ → Node.js:3001   │ │
-│  └──────────────┘      └──────────────────┘ │
-└─────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────┐
-│           NestJS API (Port 3001)            │
-│                                              │
-│  • Prisma ORM + SQLite                      │
-│  • Database: /data/prod.db                 │
-└─────────────────────────────────────────────┘
-```
+## Production Profile
 
-### Deployment
+### Runtime Model
 
-**Hugging Face Spaces** (recommended):
-- Auto-deploys on push to `main` via GitHub Actions
-- See `.github/workflows/huggingface-deploy.yml`
+Single container image from Dockerfile target production:
 
-**Manual deploy:**
+- Nginx serves frontend on port 7860.
+- Node.js runs NestJS API on port 3001 inside the same container.
+- SQLite persistent data at /data/prod.db.
+
+### Start and Stop
+
 ```bash
-pip install huggingface-hub
-huggingface-cli login
-git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME
-git push hf main
+npm run start
+npm run start:down
 ```
 
-### Important Notes
+### Health and Readiness
 
-- **Port**: 7860 (Hugging Face Spaces standard)
-- **Persistent Storage**: Enable in Space Settings, uses `/data`
-- **Health Check**: `GET /api/owner` on port 7860
-- **SQLite**: Database at `/data/prod.db`
+- Compose healthcheck: GET http://localhost:3001/health.
+- Startup readiness in docker/start.sh: waits for GET http://127.0.0.1:3001/api/owner.
 
-## Build Process (Multi-stage)
+## Dockerfile Stages
 
-```
-Stage 1: deps
-  └── Install npm dependencies (used for development)
-
-Stage 2: spec-builder
-  └── Generate OpenAPI from TypeSpec
-
-Stage 3: builder
-  ├── Build shared packages (date-utils)
-  ├── Build NestJS API
-  ├── Generate Prisma client
-  └── Build Vue.js frontend
-
-Stage 4: production
-  ├── Nginx (serves static files)
-  ├── Node.js (runs API)
-  └── SQLite volume (persistent data)
+```text
+deps        -> install workspace dependencies
+spec-builder-> compile TypeSpec to OpenAPI
+builder     -> build shared package + api + web
+e2e-web     -> nginx image with built web assets for e2e
+production  -> nginx + node runtime image for production
 ```
 
-## File Structure
+## Key Files
 
-```
-docker/
-├── nginx.conf          # Production nginx configuration
-├── nginx-e2e.conf      # E2E nginx configuration
-└── start.sh            # Production container startup script
-
-Dockerfile              # Multi-stage build
-docker-compose.yml      # Unified compose with profiles
-docker-compose.override.yml  # Optional override for E2E debug
-docker-compose.yml      # Local development
-DOCKER.md               # This file
-```
+- docker-compose.yml
+- docker-compose.override.local.yml
+- Dockerfile
+- docker/nginx.conf
+- docker/nginx-e2e.conf
+- docker/start.sh
 
 ## Troubleshooting
 
-### Container won't start
+### Validate compose config
 
 ```bash
-# Check logs
-docker compose logs -f <service-name>
-
-# Check all services
-docker compose ps
+docker compose --profile dev config
+docker compose --profile e2e config
+docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e config
 ```
 
-### Database permission errors
+### Inspect logs
 
 ```bash
-# Check permissions inside container
-docker compose exec api-e2e ls -la /data/
-
-# Should show: drwxrwxrwx (777)
+docker compose logs -f contracts-watcher
+docker compose logs -f api-dev
+docker compose logs -f prism
+docker compose logs -f web-dev
+docker compose logs -f api-e2e
+docker compose logs -f web-e2e
 ```
 
-### Health check failures
-
-Common causes:
-1. Database not migrated → Check startup logs
-2. Port misconfiguration → Verify service ports
-3. Backend crash → Check service logs
-
-### Rebuild everything
+### Full reset
 
 ```bash
-# Nuclear option: remove all and rebuild
 docker compose down -v
-docker system prune -a
-docker compose --profile <profile> up --build
+docker compose --profile dev up --build
 ```
 
 ## Security Notes
 
-- SQLite file has 777 permissions (required for container user)
-- CORS enabled for all origins (`origin: true`)
-- No authentication in MVP (as per requirements)
-- Health endpoint is public (`GET /api/owner`)
-
-## CI/CD (GitHub Actions)
-
-- **Hexlet Check**: `.github/workflows/hexlet-check.yml` (auto-generated, runs on every push)
-- **E2E Tests**: `.github/workflows/e2e.yml` (runs E2E tests with browser caching)
-- **Hugging Face Deploy**: `.github/workflows/huggingface-deploy.yml` (deploys to HF Spaces on push to main)
+- MVP setup keeps SQLite at permissive permissions for container compatibility.
+- CORS is enabled for development and e2e workflows.
+- No authentication layer is enabled in MVP by design.

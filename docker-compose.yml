@@ -7,15 +7,13 @@
 # For fast E2E debug without rebuild:
 #   docker compose -f docker-compose.yml -f docker-compose.override.local.yml --profile e2e up
 
-version: "3.8"
-
 x-api-base: &api-base
   build:
     context: .
     dockerfile: Dockerfile
     target: deps
   volumes:
-    - .:/app:cached
+    - .:/app
     - node_modules:/app/node_modules
   environment:
     - NODE_ENV=development
@@ -27,24 +25,50 @@ services:
   # DEVELOPMENT PROFILE
   # ==========================================
 
-  spec-watcher:
+  contracts-watcher:
     <<: *api-base
     profiles: ["dev"]
-    working_dir: /app/packages/api-spec
-    command: npm run dev
-    container_name: calendar-spec-watcher
+    command: >
+      sh -c "
+        npm run build -w api-spec &&
+        npm run generate:types -w web &&
+        npm run dev -w api-spec &
+        npm run watch:types -w web &
+        wait
+      "
+    container_name: calendar-contracts-watcher
     healthcheck:
-      disable: true
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "[ -s /app/packages/contracts/openapi.yaml ] && [ -s /app/apps/web/src/types/generated/api-types.ts ]",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
 
-  type-watcher:
+  api-dev-init:
     <<: *api-base
     profiles: ["dev"]
-    working_dir: /app/apps/web
-    command: npm run watch:types
-    container_name: calendar-type-watcher
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - dev_data:/data
+    environment:
+      - DATABASE_URL=file:/data/dev.db
+    command: >
+      sh -c "
+        npm run db:push -w api -- --accept-data-loss &&
+        npm run db:seed -w api
+      "
+    container_name: calendar-api-dev-init
+    restart: "no"
     depends_on:
-      spec-watcher:
-        condition: service_started
+      contracts-watcher:
+        condition: service_healthy
     healthcheck:
       disable: true
 
@@ -53,16 +77,17 @@ services:
     profiles: ["dev"]
     ports:
       - "3001:3001"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - dev_data:/data
     environment:
       - DATABASE_URL=file:/data/dev.db
-    working_dir: /app/apps/api
-    command: >
-      sh -c "
-        npx prisma db push --accept-data-loss &&
-        npm run db:seed &&
-        npm run dev
-      "
+    command: npm run dev -w api
     container_name: calendar-api-dev
+    depends_on:
+      api-dev-init:
+        condition: service_completed_successfully
     healthcheck:
       disable: true
 
@@ -78,7 +103,14 @@ services:
     command: proxy /openapi.yaml http://api-dev:3001 --errors -p 4010 -m false -h 0.0.0.0
     container_name: calendar-prism
     depends_on:
-      - api-dev
+      api-dev:
+        condition: service_started
+      contracts-watcher:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: restart
+          path: ./packages/contracts/openapi.yaml
 
   web-dev:
     <<: *api-base
@@ -87,13 +119,14 @@ services:
       - "3000:3000"
     environment:
       - VITE_API_TARGET=http://prism:4010
-    working_dir: /app/apps/web
     # --host makes Vite listen on 0.0.0.0 to accept Docker port forwarding
-    command: npm run dev -- --host
+    command: npm run dev -w web -- --host
     container_name: calendar-web-dev
     depends_on:
-      - prism
-      - type-watcher
+      prism:
+        condition: service_started
+      contracts-watcher:
+        condition: service_healthy
 
   # ==========================================
   # E2E TESTING PROFILE
@@ -104,53 +137,42 @@ services:
     profiles: ["e2e"]
     ports:
       - "3001:3001"
+    # Keep CI clean: no bind-mount in base e2e profile.
+    # Local bind-mount for fast debug lives in docker-compose.override.local.yml.
+    volumes:
+      - node_modules:/app/node_modules
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/data/test.db
       - E2E_TESTING=true
-    working_dir: /app/apps/api
     command: >
       sh -c "
         npm run build -w @calendar/date-utils &&
-        npm run build &&
-        npx prisma generate &&
-        npx prisma db push --accept-data-loss &&
-        npm run db:seed &&
-        node dist/src/main
+        npm run build -w api &&
+        npm run db:generate -w api &&
+        npm run db:push -w api -- --accept-data-loss &&
+        npm run start:prod -w api
       "
     container_name: calendar-api-e2e
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3001/api/owner"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3001/health"]
       interval: 2s
       timeout: 5s
       retries: 30
       start_period: 10s
 
-  web-builder-e2e:
-    <<: *api-base
-    profiles: ["e2e"]
-    volumes:
-      - web_dist:/app/apps/web/dist
-    working_dir: /app/apps/web
-    command: >
-      sh -c "
-        npm run copy-themes &&
-        npm run build
-      "
-    container_name: calendar-web-builder-e2e
-
   web-e2e:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: e2e-web
     profiles: ["e2e"]
     ports:
       - "3000:3000"
-    volumes:
-      - ./docker/nginx-e2e.conf:/etc/nginx/conf.d/default.conf:ro
-      - web_dist:/usr/share/nginx/html:ro
     container_name: calendar-web-e2e
     depends_on:
-      - api-e2e
-      - web-builder-e2e
+      api-e2e:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/"]
       interval: 2s
@@ -186,6 +208,6 @@ services:
       start_period: 40s
 
 volumes:
+  dev_data:
   node_modules:
-  web_dist:
   sqlite_data:

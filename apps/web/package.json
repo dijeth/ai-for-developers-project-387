@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
+    "build:watch": "vue-tsc --watch --noEmit & vite build --watch",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview",
     "copy-themes": "rm -rf public/themes && mkdir -p public/themes && cp ../../node_modules/primevue/resources/themes/lara-light-blue/theme.css public/themes/light.css && cp ../../node_modules/primevue/resources/themes/lara-dark-blue/theme.css public/themes/dark.css",

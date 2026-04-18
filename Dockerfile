@@ -11,9 +11,15 @@ COPY apps/web/package*.json ./apps/web/
 COPY packages/api-spec/package*.json ./packages/api-spec/
 COPY packages/contracts/package*.json ./packages/contracts/
 COPY packages/date-utils/package*.json ./packages/date-utils/
+COPY packages/date-utils/tsconfig.json ./packages/date-utils/
 
 # Copy Prisma schema (required for postinstall hook)
 COPY apps/api/prisma ./apps/api/prisma
+
+# Create empty node_modules for packages to ensure reliability of next stages 
+RUN mkdir -p /app/packages/api-spec/node_modules
+RUN mkdir -p /app/packages/contracts/node_modules
+RUN mkdir -p /app/packages/date-utils/node_modules
 
 # Install dependencies
 RUN npm ci
@@ -22,64 +28,66 @@ RUN npm ci
 FROM node:20-alpine AS spec-builder
 
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package*.json ./
 COPY packages/api-spec ./packages/api-spec
 COPY packages/contracts ./packages/contracts
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/api-spec/node_modules ./packages/api-spec/node_modules
+COPY --from=deps /app/package*.json ./
 
 # Generate OpenAPI from TypeSpec
-WORKDIR /app/packages/api-spec
-RUN npx tsp compile .
+RUN npm run build -w api-spec
 
 # Stage 3: Build all applications
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package*.json ./
-COPY --from=spec-builder /app/packages/contracts ./packages/contracts
 
 # Copy all source code
 COPY apps/api ./apps/api
 COPY apps/web ./apps/web
 COPY packages/date-utils ./packages/date-utils
-COPY packages/contracts ./packages/contracts
 
-# Install tsx for seed script
-RUN npm install -g tsx
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package*.json ./
+COPY --from=deps /app/apps/api/package*.json ./apps/api/
+COPY --from=deps /app/apps/web/package*.json ./apps/web/
+COPY --from=deps /app/packages/date-utils/package*.json ./packages/date-utils/
 
-# Build date-utils first (shared package)
-WORKDIR /app/packages/date-utils
-RUN npm run build
+COPY --from=spec-builder /app/packages/contracts ./packages/contracts
 
-# Build API
-WORKDIR /app/apps/api
-RUN npm run build
-RUN npx prisma generate
+# Build all packages and applications
+RUN npm run build -w @calendar/date-utils
+RUN npm run build -w api
+RUN npm run copy-themes -w web
+RUN npm run build -w web
 
-# Build Web frontend
-WORKDIR /app/apps/web
-# Copy themes (postinstall doesn't run in Docker build)
-RUN npm run copy-themes
-RUN npm run build
+# Stage 4: E2E web image (prebuilt static frontend + nginx)
+FROM nginx:alpine AS e2e-web
 
-# Stage 4: Production image
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+COPY --from=builder /app/apps/web/public/themes /usr/share/nginx/html/themes
+COPY docker/nginx-e2e.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 3000
+
+# Stage 5: Production image
 FROM nginx:alpine AS production
 
 # Install Node.js and timezone data for consistent date handling
-RUN apk add --no-cache nodejs npm tzdata
+RUN apk add --no-cache nodejs tzdata
 
 # Set timezone to UTC for consistent date parsing across environments
 ENV TZ=UTC
 
 WORKDIR /app
 
-# Copy the entire app structure (to preserve workspace symlinks)
+# Copy API build and runtime dependencies
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
-COPY --from=builder /app/apps/api/package*.json ./apps/api/
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
+# Copy only compiled date-utils (workspace symlink in node_modules points here)
+COPY --from=builder /app/packages/date-utils/dist ./packages/date-utils/dist
+COPY --from=builder /app/packages/date-utils/package.json ./packages/date-utils/package.json
 
 # Copy frontend build to nginx html
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html

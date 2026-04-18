@@ -20,8 +20,8 @@ if [ ! -f "$DB_FILE" ] || [ "$DB_SIZE" -lt 100 ]; then
     # Remove empty/corrupt file if exists
     rm -f "$DB_FILE"
     cd /app/apps/api
-    npx prisma db push --accept-data-loss || true
-    npm run db:seed 2>/dev/null || true
+    /app/node_modules/.bin/prisma db push --accept-data-loss || true
+    /app/node_modules/.bin/tsx /app/apps/api/prisma/seed.ts 2>/dev/null || true
     echo "Database initialized at $DB_FILE"
 fi
 
