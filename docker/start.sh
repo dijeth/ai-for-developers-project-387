@@ -21,7 +21,7 @@ if [ ! -f "$DB_FILE" ] || [ "$DB_SIZE" -lt 100 ]; then
     rm -f "$DB_FILE"
     cd /app/apps/api
     /app/node_modules/.bin/prisma db push --accept-data-loss || true
-    /app/node_modules/.bin/tsx /app/apps/api/prisma/seed.ts 2>/dev/null || true
+    node dist/prisma/seed.js 2>/dev/null || true
     echo "Database initialized at $DB_FILE"
 fi
 
@@ -53,7 +53,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     fi
     
     # Try to connect to health endpoint
-    if wget -q -O - http://127.0.0.1:3001/api/owner > /dev/null 2>&1; then
+    if wget -q -O - http://127.0.0.1:3001/health > /dev/null 2>&1; then
         echo "Backend is ready! (responded with HTTP 200)"
         break
     fi
