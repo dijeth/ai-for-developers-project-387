@@ -54,15 +54,7 @@ test.describe('Happy Path - Complete Booking Flow', () => {
       // Wait for calendar to be ready
       await expect(page.locator('.calendar-legend')).toBeVisible({ timeout: 10000 })
 
-      // Get a working day (tomorrow if it's a weekday, otherwise next weekday)
-      const tomorrow = getTomorrow()
-      const dayOfWeek = tomorrow.getDay()
-      // If tomorrow is weekend (0=Sunday, 6=Saturday), get next Monday
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        selectedDate = getNextWeekday(tomorrow, 1) // Next Monday
-      } else {
-        selectedDate = tomorrow
-      }
+      selectedDate = getNextWeekday(new Date()) // Get next weekday for booking
 
       // Navigate to the correct month in calendar if needed
       const currentMonth = new Date().getMonth()
@@ -190,16 +182,7 @@ test.describe('Happy Path - Complete Booking Flow', () => {
 
   test('Admin sees booking created via API', async ({ page, request }) => {
     // Create booking via API
-    const tomorrow = getTomorrow()
-    const dayOfWeek = tomorrow.getDay()
-    let bookingDate: Date
-
-    // If tomorrow is weekend, get next Monday
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      bookingDate = getNextWeekday(tomorrow, 1)
-    } else {
-      bookingDate = tomorrow
-    }
+    let bookingDate = getNextWeekday(new Date()) // Get next weekday for booking
 
     const guestName = generateTestName('API')
     const guestEmail = generateTestEmail('api')
@@ -232,8 +215,10 @@ test.describe('Happy Path - Complete Booking Flow', () => {
         data: {
           eventTypeId: eventType.id,
           startTime: slot.startTime,
-          guestName: guestName,
-          guestEmail: guestEmail,
+          guest: {
+            name: guestName,
+            email: guestEmail,
+          },
         },
       })
       expect(bookingResponse.ok()).toBeTruthy()
@@ -275,7 +260,7 @@ test.describe('Happy Path - Complete Booking Flow', () => {
       await expect(page.locator('.calendar-legend')).toContainText('Есть бронирования')
 
       console.log('✅ Admin API verification test completed!')
-      console.log(`   Guest: ${guestName}`)
+      console.log(`   Guest: ${guestName} (${guestEmail})`)
       console.log(`   Event: ${eventType.title}`)
     } else {
       console.log('⚠️ No slots available for API test - skipping booking creation')

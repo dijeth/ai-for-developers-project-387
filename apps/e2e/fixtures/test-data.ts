@@ -1,3 +1,12 @@
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const ADMIN_TZ = 'Europe/Moscow';
+
 /**
  * Test data generators for E2E tests
  *
@@ -33,13 +42,14 @@ export function getTomorrow(): Date {
 /**
  * Get next weekday (Mon-Fri) from a given date
  */
-export function getNextWeekday(from: Date, dayOfWeek: number): Date {
-  const result = new Date(from)
-  const currentDay = result.getDay()
-  const distance = (dayOfWeek + 7 - currentDay) % 7 || 7
-  result.setDate(result.getDate() + distance)
-  result.setHours(0, 0, 0, 0)
-  return result
+export function getNextWeekday(from: Date): Date {
+  const adminNow = dayjs(from).tz(ADMIN_TZ);
+  return adminNow.day() >= 0 && adminNow.day() < 5
+    ? adminNow.add(1, 'day').startOf('day').utc().toDate()
+    : adminNow.endOf('week')
+      .add(2, 'day') // add two days to get to Monday (because endOf('week') gives us Saturday)
+      .startOf('day')
+      .utc().toDate();
 }
 
 /**
@@ -60,9 +70,11 @@ export function toISODateTime(date: Date): string {
  * Create date at specific hour in UTC
  */
 export function createDateAtHour(date: Date, hour: number, minute = 0): Date {
-  const result = new Date(date)
-  result.setUTCHours(hour, minute, 0, 0)
-  return result
+  return dayjs(date)
+    .add(hour, 'hour')
+    .add(minute, 'minute')
+    .utc()
+    .toDate();
 }
 
 /**

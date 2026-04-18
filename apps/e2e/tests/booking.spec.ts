@@ -66,8 +66,7 @@ test.describe('Booking Flow', () => {
     expect(eventTypesData.eventTypes.length).toBeGreaterThan(0)
 
     // Get tomorrow's date for a weekday
-    const tomorrow = getTomorrow()
-    const nextWeekday = getNextWeekday(tomorrow, 1) // Monday = 1
+    const nextWeekday = getNextWeekday(new Date()) // Monday = 1
     const dateFrom = toISODateTime(createDateAtHour(nextWeekday, 9))
     const dateTo = toISODateTime(createDateAtHour(nextWeekday, 17))
 
@@ -95,8 +94,7 @@ test.describe('Booking Flow', () => {
     const eventType = eventTypesData.eventTypes[0]
 
     // Get available slots
-    const tomorrow = getTomorrow()
-    const nextWeekday = getNextWeekday(tomorrow, 1)
+    const nextWeekday = getNextWeekday(new Date())
     const dateFrom = toISODateTime(createDateAtHour(nextWeekday, 9))
     const dateTo = toISODateTime(createDateAtHour(nextWeekday, 17))
 
@@ -115,8 +113,10 @@ test.describe('Booking Flow', () => {
         data: {
           eventTypeId: eventType.id,
           startTime: slot.startTime,
-          guestName: generateTestName(),
-          guestEmail: generateTestEmail(),
+          guest: {
+            name: generateTestName(),
+            email: generateTestEmail(),
+          },
         },
       })
 
@@ -128,7 +128,7 @@ test.describe('Booking Flow', () => {
       expect(bookingData).toHaveProperty('startTime')
     } else {
       // No slots available, just log it
-      console.log('No slots available for booking creation test')
+      console.log('Test has not been executed: No slots available for booking creation test')
     }
   })
 })
