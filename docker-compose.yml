@@ -133,7 +133,10 @@ services:
   # ==========================================
 
   api-e2e:
-    <<: *api-base
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
     profiles: ["e2e"]
     ports:
       - "3001:3001"
@@ -147,8 +150,6 @@ services:
       - E2E_TESTING=true
     command: >
       sh -c "
-        npm run build -w @calendar/date-utils &&
-        npm run build -w api &&
         npm run db:generate -w api &&
         npm run db:push -w api -- --accept-data-loss &&
         npm run start:prod -w api
