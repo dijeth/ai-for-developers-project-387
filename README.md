@@ -17,39 +17,57 @@ license: mit
 
 A calendar booking application built with NestJS, Vue 3, and TypeSpec.
 
+**Live Demo**: https://dijeth-ai-for-dev.hf.space/
+
 ## Features
 
 - Book appointments with calendar owners
 - Owner dashboard to manage availability
-- Real-time booking validation
-- Responsive UI with PrimeVue
+- TypeSpec-first API design with OpenAPI
+- E2E testing with Playwright
 
-## API Endpoints
+## Architecture
 
-- `GET /api/owner` - Health check & owner info
-- `GET /api/booking-slots` - Get available slots
-- `POST /api/bookings` - Create new booking
-- `GET /api/admin/bookings` - List all bookings
-- `GET /api/admin/event-types` - Get event types
+```
+TypeSpec → OpenAPI → Prism proxy → NestJS backend → Vue frontend
+```
 
-## Persistent Storage
+Monorepo structure:
+- `apps/api` — NestJS backend (port 3001)
+- `apps/web` — Vue 3 frontend (port 3000)
+- `apps/e2e` — Playwright tests
+- `packages/api-contracts` — TypeSpec + OpenAPI + Prism proxy (port 4010)
+- `packages/date-utils` — Shared UTC helpers
 
-SQLite database is stored in `/data` for persistence across restarts.
-
-## Local Development
+## Quick Start
 
 ```bash
 # Install dependencies
 npm install
 
-# Start all dev servers
+# Start all dev services (Docker Compose)
 npm run dev
+
+# Run E2E tests
+npm run e2e
+
+# Type check all packages
+npm run typecheck
 ```
 
-## Docker
+## Production
 
 ```bash
 # Build and run locally
 docker build -t calendar-booking .
 docker run -p 7860:7860 -v $(pwd)/data:/data calendar-booking
+
+# Or use npm
+npm run start
 ```
+
+SQLite database is stored in `/data` for persistence.
+
+## Details
+
+See [AGENTS.md](./AGENTS.md) for full project documentation.

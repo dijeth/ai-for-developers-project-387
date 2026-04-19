@@ -8,12 +8,12 @@ Calendar booking monorepo using **TypeSpec** for API-first design. Architecture:
 
 ```
 apps/
-  api/           # NestJS + Prisma backend (port 3001) - scaffold only, not used by frontend
+  api/           # NestJS + Prisma backend (port 3001)
   web/           # Vue 3 + PrimeVue frontend (port 3000) → proxies /api to :4010
   e2e/           # Playwright E2E tests (port 3000 via Playwright)
 packages/
-  api-spec/      # TypeSpec source files (main.tsp)
-  contracts/     # Generated openapi.yaml + Prism proxy on port 4010 (forwards to :3001)
+  api-contracts/ # TypeSpec source + generated OpenAPI (Prism proxy on port 4010)
+  date-utils/    # Shared UTC date/time helpers for backend and frontend
 ```
 
 ## Essential Commands
@@ -50,26 +50,42 @@ npm run docker:clean  # Stop all containers and remove volumes
 
 Build order remains important:
 
-1. `packages/api-spec` compiles TypeSpec to `packages/contracts/openapi.yaml`
-2. `apps/web` generates TypeScript API types from `packages/contracts/openapi.yaml`
+1. `packages/api-contracts` compiles TypeSpec to `openapi.yaml`
+2. `apps/web` generates TypeScript API types from `openapi.yaml`
 3. Application builds consume generated artifacts
 
-**Never modify `packages/contracts/openapi.yaml` manually** — generated from TypeSpec.
+**Never modify `packages/api-contracts/openapi.yaml` manually** — generated from TypeSpec.
 
 ## Package Details
 
-### packages/api-spec
+### packages/api-contracts
+
+TypeSpec source + generated OpenAPI specification.
 
 - **Entry**: `main.tsp`
-- **Output**: `../contracts/openapi.yaml` (configured in `tspconfig.yaml`)
-- **Commands**: `npm run build` (once), `npm run watch` / `npm run dev` (watch mode)
-
-### packages/contracts
-
-- **Generated**: `openapi.yaml` (OpenAPI 3.1.0)
+- **Output**: `openapi.yaml` (OpenAPI 3.1.0) via TypeSpec compiler
 - **Commands**:
-  - `npm run mock` - Prism mock server on port 4010
-  - `npm run dev` - Prism **proxy** mode (forwards to localhost:3001) with error simulation
+  - `npm run compile` — compile TypeSpec once
+  - `npm run watch` — compile in watch mode
+- **Prism proxy** (port 4010):
+  - `npm run mock` - mock server
+  - `npm run dev` - proxy mode (forwards to localhost:3001)
+
+### packages/date-utils
+
+Shared UTC date/time helpers for backend and frontend.
+
+**Location**: `packages/date-utils/src/index.ts`
+
+```typescript
+// Shared UTC helpers
+utcNow();
+fromISO(string);
+toISO(date);
+startOfUTCDay(date);
+endOfUTCDay(date);
+// ... and more
+```
 
 ### apps/web
 
@@ -256,7 +272,7 @@ test.describe("My Feature", () => {
 
 ## When Adding Features
 
-1. **API changes**: Edit `packages/api-spec/main.tsp` → TypeSpec watcher recompiles → openapi.yaml updates
+1. **API changes**: Edit `packages/api-contracts/main.tsp` → TypeSpec watcher recompiles → openapi.yaml updates
 2. **Frontend changes**: Edit `apps/web/src/**/*.vue` → hot reload via Vite (inside Docker container)
 3. **Backend changes**: Edit `apps/api/src/` → NestJS dev server auto-restarts (inside Docker container)
 
