@@ -97,6 +97,9 @@ COPY --from=builder /app/apps/web/public/themes /usr/share/nginx/html/themes
 RUN mkdir -p /data && chmod 777 /data
 RUN ln -sf /data /app/apps/api/data
 
+# Named volume for persistent SQLite storage
+VOLUME ["/data"]
+
 # Copy nginx configuration template
 COPY docker/nginx.conf.template /etc/nginx/conf.d/default.conf.template
 

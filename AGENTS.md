@@ -465,8 +465,8 @@ The production container supports the following environment variables:
 
 **Local testing with custom port**:
 ```bash
-# Run production container on port 8080 instead of 7860
-docker run -e PORT=8080 -e API_PORT=3001 -p 8080:8080 calendar-app
+# Run production container on port 8080 instead of 7860 (with persistent data volume)
+docker run -e PORT=8080 -e API_PORT=3001 -p 8080:8080 -v calendar-data:/data calendar-booking
 ```
 
 ## Other Notes

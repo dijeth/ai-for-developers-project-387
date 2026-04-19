@@ -55,18 +55,20 @@ npm run e2e
 npm run typecheck
 ```
 
-## Production
+## Production (Docker)
 
 ```bash
-# Build and run locally
+# Build image
 docker build -t calendar-booking .
-docker run -p 7860:7860 -v $(pwd)/data:/data calendar-booking
 
-# Or use npm
-npm run start
+# Run with default port (7860)
+docker run -p 7860:7860 -v calendar-data:/data calendar-booking
+
+# Run with custom port
+docker run -e PORT=8080 -p 8080:8080 -v calendar-data:/data calendar-booking
 ```
 
-SQLite database is stored in `/data` for persistence.
+SQLite database сохраняется в именованном Docker-томе `calendar-data`.
 
 ## Details
 
