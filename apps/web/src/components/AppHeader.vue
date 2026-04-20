@@ -85,6 +85,12 @@ const { isDark, toggleTheme } = useTheme();
   color: var(--primary-color);
 }
 
+.nav-link.router-link-active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 2px;
+}
+
 .theme-toggle {
   color: var(--text-color-secondary);
 }
