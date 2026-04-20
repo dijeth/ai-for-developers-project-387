@@ -1,0 +1,1047 @@
+openapi: 3.1.0
+info:
+  title: (title)
+  description: |-
+    Calendar Booking API
+
+    Simplified booking system inspired by Cal.com
+    Two roles: calendar owner (single static profile) and guests (book without registration)
+    All times are in UTC, client handles timezone conversion
+  version: 0.0.0
+tags:
+  - name: Admin - Event Types
+  - name: Admin - Bookings
+  - name: Admin - Owner & Working Hours
+  - name: Public - Owner
+  - name: Public - Event Types
+  - name: Public - Bookings
+paths:
+  /api/admin/bookings:
+    get:
+      operationId: AdminBookings_listBookings
+      summary: List bookings (sorted by start time). Filter by date range using dateFrom/dateTo query params.
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          description: Filter bookings from this date (inclusive, UTC)
+          schema:
+            type: string
+            format: date-time
+          explode: false
+        - name: dateTo
+          in: query
+          required: false
+          description: Filter bookings until this date (inclusive, UTC)
+          schema:
+            type: string
+            format: date-time
+          explode: false
+        - name: params
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ListBookingsParams'
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingListResponse'
+      tags:
+        - Admin - Bookings
+  /api/admin/bookings/{id}:
+    delete:
+      operationId: AdminBookings_deleteBooking
+      summary: Cancel/delete a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Bookings
+  /api/admin/event-types:
+    post:
+      operationId: AdminEventTypes_createEventType
+      summary: Create event type
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Event Types
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventTypeRequest'
+    get:
+      operationId: AdminEventTypes_listEventTypes
+      summary: List all event types
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventTypeListResponse'
+      tags:
+        - Admin - Event Types
+  /api/admin/event-types/{id}:
+    put:
+      operationId: AdminEventTypes_updateEventType
+      summary: Update event type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Event Types
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventTypeRequest'
+    delete:
+      operationId: AdminEventTypes_deleteEventType
+      summary: Delete event type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Event Types
+  /api/admin/owner:
+    get:
+      operationId: AdminWorkingHours_getOwner
+      summary: Get owner profile
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+      tags:
+        - Admin - Owner & Working Hours
+    put:
+      operationId: AdminWorkingHours_updateOwner
+      summary: Update owner profile
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOwnerRequest'
+  /api/admin/owner/time-offs:
+    post:
+      operationId: AdminWorkingHours_createTimeOff
+      summary: Create working hours time-off (future dates only, no bookings in range)
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHoursTimeOff'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTimeOffRequest'
+    get:
+      operationId: AdminWorkingHours_listTimeOffs
+      summary: List all time-offs
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkingHoursTimeOff'
+      tags:
+        - Admin - Owner & Working Hours
+  /api/admin/owner/time-offs/{id}:
+    put:
+      operationId: AdminWorkingHours_updateTimeOff
+      summary: Update time-off (future dates only, no bookings in range)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHoursTimeOff'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTimeOffRequest'
+    delete:
+      operationId: AdminWorkingHours_deleteTimeOff
+      summary: Delete time-off (future dates only, no bookings in range)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+  /api/admin/owner/working-hours:
+    get:
+      operationId: AdminWorkingHours_listWorkingHours
+      summary: List working hours schedule (one entry per weekday)
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHoursListResponse'
+      tags:
+        - Admin - Owner & Working Hours
+    put:
+      operationId: AdminWorkingHours_replaceWorkingHours
+      summary: Bulk replace all working hours (replaces entire schedule)
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHoursListResponse'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkReplaceWorkingHoursRequest'
+    post:
+      operationId: AdminWorkingHours_createWorkingHours
+      summary: Create working hours entry for a weekday
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHours'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkingHoursRequest'
+  /api/admin/owner/working-hours/{weekday}:
+    put:
+      operationId: AdminWorkingHours_updateWorkingHours
+      summary: Update working hours for a specific weekday
+      parameters:
+        - name: weekday
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/DayOfWeek'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHours'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkingHoursRequest'
+    delete:
+      operationId: AdminWorkingHours_deleteWorkingHours
+      summary: Delete working hours for a specific weekday
+      parameters:
+        - name: weekday
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/DayOfWeek'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin - Owner & Working Hours
+  /api/bookings:
+    post:
+      operationId: PublicBookings_createBooking
+      summary: Create booking
+      description: |-
+        Create booking
+        Rules:
+        - Slot must be free (no overlaps)
+        - Time must be within owner's working hours + time-offs
+        - Start time must be in the future
+        - Max booking date: 3 months from now
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Public - Bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+  /api/event-types:
+    get:
+      operationId: PublicEventTypes_listPublicEventTypes
+      summary: List available event types
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventTypeListResponse'
+      tags:
+        - Public - Event Types
+  /api/event-types/{id}:
+    get:
+      operationId: PublicEventTypes_getPublicEventType
+      summary: Get event type details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Public - Event Types
+  /api/event-types/{id}/available-slots:
+    get:
+      operationId: PublicEventTypes_getAvailableSlots
+      summary: Get available slots for event type (all times in UTC)
+      description: |-
+        Get available slots for event type
+        Rules:
+        - All times are in UTC
+        - dateFrom/dateTo must represent a single day range in client timezone
+        - dateFrom must be today or in the future
+        - dateTo must not exceed bookingMonthsAhead from today
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          explode: false
+        - name: dateTo
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailableSlotsResponse'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Public - Event Types
+  /api/owner:
+    get:
+      operationId: PublicOwnerProfile_getPublicOwner
+      summary: Get public owner profile
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicOwner'
+      tags:
+        - Public - Owner
+  /api/owner/working-hours:
+    get:
+      operationId: PublicOwnerProfile_getPublicWorkingHours
+      summary: Get owner's working hours schedule
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHoursListResponse'
+      tags:
+        - Public - Owner
+components:
+  schemas:
+    AvailableSlot:
+      type: object
+      required:
+        - startTime
+        - endTime
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+      description: Available slot for booking (only available slots are returned)
+    AvailableSlotsResponse:
+      type: object
+      required:
+        - slots
+      properties:
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableSlot'
+      description: Available slots response
+    Booking:
+      type: object
+      required:
+        - id
+        - eventType
+        - endTime
+        - guest
+        - startTime
+      properties:
+        id:
+          type: string
+        eventType:
+          $ref: '#/components/schemas/EventType'
+        endTime:
+          type: string
+          format: date-time
+          description: 'Computed: startTime + event duration'
+        guest:
+          $ref: '#/components/schemas/Guest'
+        startTime:
+          type: string
+          format: date-time
+      description: Booking record (always confirmed once created)
+    BookingListResponse:
+      type: object
+      required:
+        - bookings
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+      description: Booking list response (no pagination)
+    BulkReplaceWorkingHoursRequest:
+      type: object
+      required:
+        - workingHours
+      properties:
+        workingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateWorkingHoursRequest'
+      description: Bulk replace working hours request (replaces all entries for the owner)
+    CreateBookingRequest:
+      type: object
+      required:
+        - eventTypeId
+        - startTime
+        - guest
+      properties:
+        eventTypeId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        guest:
+          $ref: '#/components/schemas/Guest'
+      description: Create booking request
+    CreateEventTypeRequest:
+      type: object
+      required:
+        - title
+        - durationMinutes
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 15
+          maximum: 480
+        description:
+          type: string
+          maxLength: 300
+      description: Create event type request
+    CreateTimeOffRequest:
+      type: object
+      required:
+        - startDateTime
+        - endDateTime
+      properties:
+        startDateTime:
+          type: string
+          format: date-time
+          description: TimeOff period start (datetime in UTC)
+        endDateTime:
+          type: string
+          format: date-time
+          description: TimeOff period end (datetime in UTC)
+      description: Create time-off request (id generated by server)
+    CreateWorkingHoursRequest:
+      type: object
+      required:
+        - weekday
+        - startTime
+        - endTime
+      properties:
+        weekday:
+          $ref: '#/components/schemas/DayOfWeek'
+        startTime:
+          type: string
+          pattern: ^([0-1][0-9]|2[0-3]):[0-5][0-9]$
+        endTime:
+          type: string
+          pattern: ^([0-1][0-9]|2[0-3]):[0-5][0-9]$
+      description: Create working hours entry request
+    DayOfWeek:
+      type: string
+      enum:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+        - sat
+        - sun
+      description: Enum for days of the week
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - NOT_FOUND
+            - VALIDATION_ERROR
+            - CONFLICT
+            - SLOT_UNAVAILABLE
+            - TIME_IN_PAST
+            - OUTSIDE_WORKING_HOURS
+            - DATE_RANGE_TOO_LARGE
+            - HAS_BOOKINGS
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+      description: Standard error response
+    EventType:
+      type: object
+      required:
+        - id
+        - title
+        - durationMinutes
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 15
+          maximum: 480
+        description:
+          type: string
+          maxLength: 300
+      description: Event type = duration choice (30min, 60min, etc.)
+    EventTypeListResponse:
+      type: object
+      required:
+        - eventTypes
+      properties:
+        eventTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+      description: Event type list response (no pagination)
+    GetAvailableSlotsParams:
+      type: object
+      required:
+        - dateFrom
+        - dateTo
+      properties:
+        dateFrom:
+          type: string
+          format: date-time
+          description: Start of day in client timezone, converted to UTC
+        dateTo:
+          type: string
+          format: date-time
+          description: End of day in client timezone, converted to UTC
+      description: Get available slots parameters
+    Guest:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+      description: Guest information for booking
+    ListBookingsParams:
+      type: object
+      description: Parameters for filtering bookings by date range
+    Owner:
+      type: object
+      required:
+        - name
+        - email
+        - timezone
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        description:
+          type: string
+        avatar:
+          type: string
+          format: uri
+          examples:
+            - https://i.pravatar.cc/150?img=1
+        bookingMonthsAhead:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+          description: Number of months ahead that booking is possible
+          examples:
+            - 3
+        timezone:
+          type: string
+          description: Timezone for displaying dates (IANA format)
+          examples:
+            - Europe/Moscow
+      description: Calendar owner profile (static, single owner)
+    PublicOwner:
+      type: object
+      required:
+        - name
+        - timezone
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+        avatar:
+          type: string
+          format: uri
+          examples:
+            - https://i.pravatar.cc/150?img=1
+        bookingMonthsAhead:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+          description: Number of months ahead that booking is possible
+          examples:
+            - 3
+        timezone:
+          type: string
+          description: Timezone for displaying dates (IANA format)
+          examples:
+            - Europe/Moscow
+      description: Public owner profile (without sensitive data)
+    UpdateEventTypeRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 15
+          maximum: 480
+        description:
+          type: string
+          maxLength: 300
+      description: Update event type request
+    UpdateOwnerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        description:
+          type: string
+        avatar:
+          type: string
+          format: uri
+          examples:
+            - https://i.pravatar.cc/150?img=1
+        bookingMonthsAhead:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+          description: Number of months ahead that booking is possible
+        timezone:
+          type: string
+          description: Timezone for displaying dates (IANA format)
+          examples:
+            - Europe/Moscow
+      description: Update working hours request (partial)
+    UpdateTimeOffRequest:
+      type: object
+      properties:
+        startDateTime:
+          type: string
+          format: date-time
+          description: TimeOff period start (datetime in UTC)
+        endDateTime:
+          type: string
+          format: date-time
+          description: TimeOff period end (datetime in UTC)
+      description: Update time-off request (partial update)
+    UpdateWorkingHoursRequest:
+      type: object
+      properties:
+        startTime:
+          type: string
+          pattern: ^([0-1][0-9]|2[0-3]):[0-5][0-9]$
+        endTime:
+          type: string
+          pattern: ^([0-1][0-9]|2[0-3]):[0-5][0-9]$
+      description: Update working hours entry request (partial)
+    WorkingHours:
+      type: object
+      required:
+        - id
+        - weekday
+        - startTime
+        - endTime
+      properties:
+        id:
+          type: string
+        weekday:
+          $ref: '#/components/schemas/DayOfWeek'
+        startTime:
+          type: string
+          pattern: ^([0-1][0-9]|2[0-3]):[0-5][0-9]$
+        endTime:
+          type: string
+          pattern: ^([0-1][0-9]|2[0-3]):[0-5][0-9]$
+      description: Working hours entry for a specific weekday
+    WorkingHoursListResponse:
+      type: object
+      required:
+        - workingHours
+      properties:
+        workingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkingHours'
+      description: Working hours list response
+    WorkingHoursTimeOff:
+      type: object
+      required:
+        - id
+        - startDateTime
+        - endDateTime
+      properties:
+        id:
+          type: string
+        startDateTime:
+          type: string
+          format: date-time
+          description: TimeOff period start (datetime in UTC)
+        endDateTime:
+          type: string
+          format: date-time
+          description: TimeOff period end (datetime in UTC)
+      description: |-
+        TimeOff from working hours schedule
+        Admin manages these - only future dates, no bookings in range allowed
+servers:
+  - url: https://api.example.com
+    description: Production server
+    variables: {}

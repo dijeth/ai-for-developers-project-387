@@ -1,0 +1,30 @@
+{
+  "name": "ai-for-developers-project-386",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "docker compose -f docker-compose.app.yml --profile dev up --build",
+    "dev:down": "docker compose -f docker-compose.app.yml --profile dev down",
+    "typecheck": "npm run typecheck --workspaces",
+    "e2e": "docker compose -f docker-compose.app.yml --profile e2e up --build -d --wait && npm exec -w e2e playwright test",
+    "e2e:ui": "docker compose -f docker-compose.app.yml --profile e2e up --build -d --wait && npm exec -w e2e playwright test --ui",
+    "e2e:down": "docker compose -f docker-compose.app.yml --profile e2e down -v",
+    "e2e:local:prepare": "npm run build -w @calendar/date-utils && npm run build -w api && npm run build -w web",
+    "e2e:local:up": "docker compose -f docker-compose.app.yml -f docker-compose.app.override.local.yml --profile e2e up --build -d --wait",
+    "e2e:local:watch": "sh -c 'npm run dev -w @calendar/date-utils & npm run build:watch -w api & npm run build:watch -w web & wait'",
+    "e2e:local": "npm run e2e:local:prepare && npm run e2e:local:up && npm exec -w e2e playwright test",
+    "e2e:local:ui": "npm run e2e:local:prepare && npm run e2e:local:up && npm exec -w e2e playwright test --ui",
+    "e2e:local:debug": "sh -c 'set -e; npm run e2e:local:prepare; npm run e2e:local:up; npm run e2e:local:watch & WATCH_PID=$!; trap \"kill $WATCH_PID\" EXIT; npm exec -w e2e playwright test --ui'",
+    "e2e:local:down": "docker compose -f docker-compose.app.yml -f docker-compose.app.override.local.yml --profile e2e down -v",
+    "start": "docker compose -f docker-compose.app.yml --profile prod up --build",
+    "start:down": "docker compose -f docker-compose.app.yml --profile prod down",
+    "docker:clean": "docker compose -f docker-compose.app.yml down -v"
+  },
+  "devDependencies": {},
+  "packageManager": "npm@10.0.0"
+}

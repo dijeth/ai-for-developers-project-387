@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Weekday enum (matches DayOfWeek values used throughout the app)
+enum Weekday {
+  mon
+  tue
+  wed
+  thu
+  fri
+  sat
+  sun
+}
+
+// ============================================================================
+// Owner (Calendar owner) - singleton
+// ============================================================================
+
+model Owner {
+  id                 String   @id @default("owner")
+  name               String
+  email              String
+  description        String?
+  avatar             String?
+  bookingMonthsAhead Int      @default(3) // 1-12 months
+
+  // Timezone for the owner (e.g., Europe/Moscow, America/New_York)
+  timezone           String   @default("Europe/Moscow")
+
+  // Relations
+  workingHours       WorkingHours[]
+  timeOffs           TimeOff[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ============================================================================
+// WorkingHours (per-weekday schedule)
+// ============================================================================
+
+model WorkingHours {
+  id        String   @id @default(cuid())
+  weekday   Weekday
+  startTime String   // format HH:MM
+  endTime   String   // format HH:MM
+
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId   String   @default("owner")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([weekday, ownerId])
+}
+
+// ============================================================================
+// TimeOff (Days off/vacations)
+// ============================================================================
+
+model TimeOff {
+  id            String   @id @default(cuid())
+  startDateTime DateTime
+  endDateTime   DateTime
+
+  // Relation to Owner
+  owner         Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId       String   @default("owner")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([startDateTime, endDateTime])
+}
+
+// ============================================================================
+// EventType (Event types - 30 min, 60 min, etc.)
+// ============================================================================
+
+model EventType {
+  id              String    @id @default(cuid())
+  title           String
+  durationMinutes Int       // 15-480 minutes
+  description     String?
+
+  // Relation to Booking
+  bookings        Booking[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ============================================================================
+// Booking (Bookings)
+// ============================================================================
+
+model Booking {
+  id          String   @id @default(cuid())
+  startTime   DateTime
+  endTime     DateTime // calculated based on EventType.durationMinutes
+
+  // Guest is embedded in Booking (not a separate table)
+  guestName   String
+  guestEmail  String
+
+  // Relation to EventType (Restrict - prevent deleting EventType if bookings exist)
+  eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Restrict)
+  eventTypeId String
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Index for fast search by time (for overlap checking)
+  @@index([startTime, endTime])
+  @@index([guestEmail])
+}

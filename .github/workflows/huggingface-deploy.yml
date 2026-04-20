@@ -1,0 +1,35 @@
+name: Deploy to Hugging Face Spaces
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: huggingface-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
+        run: |
+          git remote add hf https://dijeth:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME
+          git push hf main --force
+
+      - name: Verify deployment
+        if: success()
+        run: |
+          echo "Deployment to Hugging Face Spaces completed successfully!"
+          echo "Space: ${{ secrets.HF_SPACE_NAME }}"

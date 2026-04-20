@@ -1,0 +1,33 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "build:watch": "vue-tsc --watch --noEmit & vite build --watch",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview",
+    "copy-themes": "rm -rf public/themes && mkdir -p public/themes && cp ../../node_modules/primevue/resources/themes/lara-light-blue/theme.css public/themes/light.css && cp ../../node_modules/primevue/resources/themes/lara-dark-blue/theme.css public/themes/dark.css",
+    "generate:types": "openapi-typescript ../../packages/api-contracts/openapi.yaml -o ./src/types/generated/api-types.ts",
+    "watch:types": "nodemon --watch ../../packages/api-contracts/openapi.yaml --exec 'npm run generate:types'",
+    "postinstall": "npm run copy-themes"
+  },
+  "dependencies": {
+    "@calendar/date-utils": "file:../../packages/date-utils",
+    "dayjs": "^1.11.20",
+    "primeicons": "^6.0.0",
+    "primevue": "^3.50.0",
+    "vue": "^3.4.0",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "nodemon": "^3.1.14",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vue-tsc": "^2.0.0"
+  }
+}
