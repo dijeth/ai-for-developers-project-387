@@ -15,10 +15,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  minDate: () => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  },
+  minDate: () => new Date(),
   maxDate: null,
   workingDays: () => ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
   markedDates: () => new Set<string>(),
