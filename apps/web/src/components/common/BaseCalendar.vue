@@ -166,6 +166,10 @@ const markedDatesKey = computed(() => {
         ></span>
         <span class="legend-label">{{ legendLabel }}</span>
       </div>
+      <div class="legend-item">
+        <span class="legend-dot disabled"></span>
+        <span class="legend-label">Недоступно</span>
+      </div>
     </div>
   </div>
 </template>
@@ -395,6 +399,11 @@ const markedDatesKey = computed(() => {
 .legend-dot.has-markers-success {
   background: var(--green-100);
   border: 2px solid var(--green-500);
+}
+
+.legend-dot.disabled {
+  background: var(--surface-100);
+  border: 2px solid var(--surface-300);
 }
 
 .legend-label {
