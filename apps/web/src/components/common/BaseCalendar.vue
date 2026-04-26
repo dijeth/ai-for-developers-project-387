@@ -285,24 +285,31 @@ const markedDatesKey = computed(() => {
 }
 
 /* Day with marker - highlighted background */
+/* Using higher specificity to override p-disabled styles */
 .base-calendar
   :deep(
-    .p-datepicker-calendar td:has(.has-marker):has(.is-working-day) > span
+    .p-datepicker-calendar td:has(.has-marker):has(.is-working-day):not(.p-disabled) > span
+  ),
+.base-calendar
+  :deep(
+    .p-datepicker-calendar td:has(.has-marker):has(.is-working-day).p-disabled > span
   ) {
-  background: var(--primary-100);
-  color: var(--primary-700);
-  font-weight: 600;
+  background: var(--primary-100) !important;
+  color: var(--primary-700) !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
 }
 
 /* Selected day with marker - only for working days */
+/* Using higher specificity and !important to override p-disabled styles */
 .base-calendar
   :deep(
     .p-datepicker-calendar
       td.p-highlight:has(.has-marker):has(.is-working-day)
       > span
   ) {
-  background: var(--primary-color);
-  color: white;
+  background: var(--primary-color) !important;
+  color: white !important;
 }
 
 .base-calendar
@@ -315,15 +322,23 @@ const markedDatesKey = computed(() => {
 }
 
 /* Success marker type (for available slots) - green */
+/* Using higher specificity to override p-disabled styles */
 .base-calendar
   :deep(
     .p-datepicker-calendar
-      td:has(.marker-type-success):has(.is-working-day)
+      td:has(.marker-type-success):has(.is-working-day):not(.p-disabled)
+      > span
+  ),
+.base-calendar
+  :deep(
+    .p-datepicker-calendar
+      td:has(.marker-type-success):has(.is-working-day).p-disabled
       > span
   ) {
-  background: var(--green-100);
-  color: var(--green-700);
-  font-weight: 600;
+  background: var(--green-100) !important;
+  color: var(--green-700) !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
 }
 
 .base-calendar
@@ -332,14 +347,15 @@ const markedDatesKey = computed(() => {
 }
 
 /* Selected day with success marker */
+/* Using higher specificity and !important to override p-disabled styles */
 .base-calendar
   :deep(
     .p-datepicker-calendar
       td.p-highlight:has(.marker-type-success):has(.is-working-day)
       > span
   ) {
-  background: var(--green-500);
-  color: white;
+  background: var(--green-500) !important;
+  color: white !important;
 }
 
 .base-calendar
@@ -383,7 +399,8 @@ const markedDatesKey = computed(() => {
 }
 
 .legend-dot.disabled {
-  background: var(--surface-200);
+  background: var(--surface-100);
+  border: 2px solid var(--surface-300);
 }
 
 .legend-label {
