@@ -6,6 +6,12 @@ on:
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -14,37 +20,76 @@ jobs:
         run: docker compose up -d --build --wait
 
       - name: Run Lighthouse CI
+        id: lighthouse
+        continue-on-error: true
         run: |
           npm install -g @lhci/cli@0.15.x
-          lhci autorun
+
+          if lhci autorun; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=failure" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Upload Lighthouse CI results
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: lighthouse-results
-          path: ./lighthouseci
+          path: .lighthouseci/
+          include-hidden-files: true
+          if-no-files-found: warn
 
       - name: Stop application
+        if: always()
         run: docker compose down
 
-  # opencode:
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #     pull-requests: write
-  #     issues: write
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v6
-  #       with:
-  #         persist-credentials: false
-  #     - name: Run OpenCode
-  #       uses: anomalyco/opencode/github@latest
-  #       env:
-  #         <KEY>: <VALUE>
-  #       with:
-  #         model: <model>
-  #         prompt: |
-  #           Review the codebase for TODO, FIXME, and HACK comments.
-  #           Group them by priority and create an issue with a summary.
+      - name: Fail workflow when Lighthouse CI fails
+        if: steps.lighthouse.outputs.status == 'failure'
+        run: |
+          echo "Lighthouse CI failed. Stopping workflow before regression comparison."
+          exit 1
+
+      - name: Download Previous Report
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: lighthouse-schedule.yml
+          name: lighthouse-results
+          path: .lighthouseci-old
+          if_no_artifact_found: warn
+
+      - name: Detect baseline report
+        id: baseline
+        run: |
+          if [ -n "$(find .lighthouseci-old -type f | head -n 1)" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip comparison when baseline is missing
+        if: steps.baseline.outputs.available != 'true'
+        run: |
+          echo "No previous Lighthouse baseline found."
+          echo "Comparison is skipped for this run; current report is stored as baseline artifact."
+
+      - name: Run OpenCode
+        if: steps.baseline.outputs.available == 'true'
+        uses: anomalyco/opencode/github@v1.4.14
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: "github-actions[bot]"
+          GIT_AUTHOR_EMAIL: "github-actions[bot]@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "github-actions[bot]"
+          GIT_COMMITTER_EMAIL: "github-actions[bot]@users.noreply.github.com"
+        with:
+          model: opencode/minimax-m2.5-free
+          use_github_token: true
+          prompt: |
+            Compare the NEW Lighthouse report in '.lighthouseci/' 
+            with the PREVIOUS report in '.lighthouseci-old/'.
+
+            1. Compare key metrics (LCP, FID, CLS) with previous results.
+            2. If any score dropped by 10% or more, CREATE a GitHub Issue titled "Performance Regression Detected" and describe specific recommendations for improvement.
+            3. If the drop is less than 10%, just output a summary to the console.
