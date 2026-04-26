@@ -73,8 +73,46 @@ jobs:
           echo "No previous Lighthouse baseline found."
           echo "Comparison is skipped for this run; current report is stored as baseline artifact."
 
+      - name: Extract Lighthouse metrics summary
+        if: steps.baseline.outputs.available == 'true'
+        run: |
+          node -e "
+            const fs = require('fs');
+
+            const summarize = (dir) => {
+              const manifestPath = dir + '/manifest.json';
+              if (!fs.existsSync(manifestPath)) return [];
+              const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+              const representative = manifest.filter(r => r.isRepresentativeRun);
+              return representative.map(r => ({
+                url: r.url,
+                performance: r.summary.performance,
+                accessibility: r.summary.accessibility,
+                'best-practices': r.summary['best-practices'],
+                seo: r.summary.seo,
+              }));
+            };
+
+            const newResults = summarize('.lighthouseci');
+            const oldResults = summarize('$RUNNER_TEMP/lighthouseci-old');
+
+            const fmt = (results) =>
+              results.map(r =>
+                '  ' + r.url + ':\n' +
+                '    performance=' + (r.performance * 100).toFixed(0) + '\n' +
+                '    accessibility=' + (r.accessibility * 100).toFixed(0) + '\n' +
+                '    best-practices=' + (r['best-practices'] * 100).toFixed(0) + '\n' +
+                '    seo=' + (r.seo * 100).toFixed(0)
+              ).join('\n');
+
+            const summary = 'NEW results:\n' + fmt(newResults) + '\n\nPREVIOUS results:\n' + fmt(oldResults);
+            console.log(summary);
+            fs.writeFileSync('$RUNNER_TEMP/lh-summary.txt', summary, 'utf8');
+          "
+
       - name: Run OpenCode
         if: steps.baseline.outputs.available == 'true'
+        timeout-minutes: 10
         uses: anomalyco/opencode/github@v1.4.14
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -87,9 +125,8 @@ jobs:
           model: opencode/kimi-k2.5
           use_github_token: true
           prompt: |
-            Compare the NEW Lighthouse report in '.lighthouseci/' 
-            with the PREVIOUS report in '${{ runner.temp }}/lighthouseci-old/'.
+            Read the file '${{ runner.temp }}/lh-summary.txt'. It contains Lighthouse scores (0-100) for each URL: NEW results and PREVIOUS results.
 
-              1. Compare key metrics (LCP, FID, CLS) with previous results.
-              2. If any score dropped by 10% or more, CREATE a GitHub Issue titled "Performance Regression Detected" and describe specific recommendations for improvement.
-              3. If the drop is less than 10%, output a short summary to the console only.
+            1. Compare NEW vs PREVIOUS scores for each URL.
+            2. If any score dropped by 10 points or more, CREATE a GitHub Issue titled "Performance Regression Detected" listing the affected URLs, which scores dropped, and recommendations for improvement.
+            3. If no score dropped by 10 points or more, output a short comparison summary to the console only. Do not create any issues or files.
