@@ -189,7 +189,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.app
     profiles: ["prod"]
     ports:
       - "${PORT:-7860}:${PORT:-7860}"

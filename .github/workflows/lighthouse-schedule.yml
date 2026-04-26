@@ -1,0 +1,50 @@
+name: Weekly Lighthouse Audit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 1" # Every Monday at 2:00 AM UTC
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Launch application with Docker Compose
+        run: docker compose up -d --build --wait
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.15.x
+          lhci autorun
+
+      - name: Upload Lighthouse CI results
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-results
+          path: ./lighthouseci
+
+      - name: Stop application
+        run: docker compose down
+
+  # opencode:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     id-token: write
+  #     contents: write
+  #     pull-requests: write
+  #     issues: write
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v6
+  #       with:
+  #         persist-credentials: false
+  #     - name: Run OpenCode
+  #       uses: anomalyco/opencode/github@latest
+  #       env:
+  #         <KEY>: <VALUE>
+  #       with:
+  #         model: <model>
+  #         prompt: |
+  #           Review the codebase for TODO, FIXME, and HACK comments.
+  #           Group them by priority and create an issue with a summary.

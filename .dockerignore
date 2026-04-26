@@ -58,3 +58,7 @@ LICENSE
 # CI/CD
 .github
 .gitlab-ci.yml
+
+# Lighthouse CI
+.lighthouseci
+.lighthouserc.js

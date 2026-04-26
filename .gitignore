@@ -62,3 +62,6 @@ coverage/
 *.pid
 *.seed
 *.pid.lock
+
+# Lighthouse CI artefacts
+.lighthouseci
